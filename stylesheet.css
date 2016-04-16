@@ -1,0 +1,42 @@
+
+/*
+ Reviews
+ */
+
+.review_header {
+    font-family: 'Arial Rounded MT';
+    font-size: large;
+    margin-left: 5px;
+}
+
+.review_container {
+    width: 350px;
+    height: 600px;
+    overflow-y: scroll;
+}
+
+.review_box {
+    width: 300px;
+    height: 75px;
+    background-color: #808080;
+    margin: 5px;
+}
+
+.review_title {
+    font-style: italic;
+    font-family: 'Arial Rounded MT';
+    font-size: medium;
+    padding-top: 5px;
+    margin: 5px;
+    margin-top: 10px;
+}
+
+.review_text {
+    font-family: 'Arial Rounded MT';
+    font-size: small;
+    margin: 5px;
+}
+
+/*
+ Misc.
+ */
