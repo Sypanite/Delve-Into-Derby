@@ -40,3 +40,8 @@
 /*
  Misc.
  */
+
+.main_buttons_no_stretch {
+	max-width: 120px;
+	max-height: 102px;
+}
