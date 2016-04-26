@@ -11,10 +11,10 @@
 		private $date;			// Date of review
 
 		function __construct($_title, $_body, $_rating, $_date) {
-			this->title = $_title;
-			this->body = $_body;
-			this->rating = $_rating;
-			this->date = $_date;
+			$this->title = $_title;
+			$this->body = $_body;
+			$this->rating = $_rating;
+			$this->date = $_date;
 		}
     }
 ?>

@@ -31,7 +31,7 @@ INSERT INTO Venues.Days VALUES (6, "Sunday");
 CREATE TABLE Venues.Venues (
 	VenueID			SMALLINT			PRIMARY KEY,
 	TypeID			CHAR				NOT NULL,
-	Name			VARCHAR(32)			NOT NULL,
+	Name			VARCHAR(64)			NOT NULL,
 	Address			VARCHAR(128)		NOT NULL,
 	Postcode		VARCHAR(12)			NOT NULL,
 	Website			VARCHAR(128),
