@@ -2,7 +2,7 @@
     /**
      * Represents a venue. Loaded from the database.
      **/
-    public class Venue {
+    class Venue {
 		
 		private $venueID;
 		private $typeID;

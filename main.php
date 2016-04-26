@@ -1,5 +1,7 @@
 <?php
-	require "Venue.php";	
+    require "Venue.inc";
+    // require "Review.inc";
+    session_start();
 
     // Database constants
 	// $dbDomain = "13.95.150.76";
@@ -7,7 +9,8 @@
 	$dbName = "venues";
     $dbUser = "root";
     $dbPassword = "1963nfZ95F";
-	
+	$dbConnection;
+
 	try {
 		$dbConnection = new PDO("mysql:host=$dbHost;dbname=$dbName", $dbUser, $dbPassword);
 		$dbConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Throw an exception if something cocks up
@@ -19,46 +22,39 @@
 		echo "</p>";
 		return;
 	}
-	
+
 	// Debug
-	$_POST["placeType"] = "R";
+	$_SESSION["venueType"] = "R";			// Set to restaurants
+	unset($_SESSION["venues_$placeType"]);	// Delete existing
 	//
 
-	if (!array_key_exists("placeType", $_GET)) {
-		echo "<p>No place type specified.</p>";
+	if (!array_key_exists("venueType", $_SESSION)) {
+		echo "<p>No venue type specified.</p>";
+		return;
 	}
 
-	$placeType = $_GET["placeType"];
+	$venueType = $_SESSION["venueType"];
+	echo "<p>Venue type: $venueType.</p>";
 
 	// Check if we've loaded the appropriate places before - there's no point loading them repeatedly
-	if (!isset($_SESSION["places_$placeType"])) {
-		echo "<p>Loading venues of type $placeType...</p>";
-		// No user input, no need for prepared statements
-		$results = mysql_query("", $dbConnection);
+	if (!isset($_SESSION["venues_$placeType"])) {
+		echo "<p>Loading venues of type $venueType...</p>";
 		
 		// Load the appropriate list
-		if ($results) {
-			$STH = $DBH->query("SELECT * FROM venues.venues WHERE TypeID = '$typeID';");
-			$STH->setFetchMode(PDO::FETCH_ASSOC); // Fetch to an associative array
+		$results = $dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType';");
+		$results->setFetchMode(PDO::FETCH_ASSOC); // Fetch to an associative array
  
- 			$venues = array();
+ 		$venues = array();
 
-			while($row = $STH->fetch()) {
-				echo $row['name'] . "\n";
-				echo $row['addr'] . "\n";
-				echo $row['city'] . "\n";
+		while($row = ($results->fetch())) {			
+			$venues[] = new Venue($row["VenueID"], $row["TypeID"], $row["Name"],
+								  $row["Address"], $row["Postcode"], $row["Website"], $row["Telephone"]);
 
-				/*
-				
-				VenueID			SMALLINT			PRIMARY KEY,
-				TypeID			CHAR				NOT NULL,
-				Name			VARCHAR(32)			NOT NULL,
-				Address			VARCHAR(128)		NOT NULL,
-				Postcode		VARCHAR(8)			NOT NULL,
-				*/
-			}
+			echo var_dump(end($venues))."<br>";
 		}
+		$_SESSION["venues_$placeType"] = $venues;
 	}
+	session_commit();
 ?>
 
 <!DOCTYPE html>
