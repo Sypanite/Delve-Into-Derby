@@ -1,5 +1,5 @@
 <?php
-    require "src/Loader.php";
+    require "src/DataLoader.php";
 ?>
 
 <!DOCTYPE html>
