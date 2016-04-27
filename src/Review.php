@@ -16,5 +16,9 @@
 			$this->rating = $_rating;
 			$this->date = $_date;
 		}
+
+		function getRating() {
+			return $this->rating;
+		}
     }
 ?>

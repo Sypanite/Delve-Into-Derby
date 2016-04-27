@@ -31,7 +31,7 @@
 		 * Loads a list of venues of the specified type.
 		 */
 		function loadVenues($venueType) {
-			echo "<p>Loading venues of type $venueType.</p>";
+			ChromePhp::log("Loading venues of type '$venueType'.");
 		
 			// Load the appropriate list - no user input, hence not a prepared statement
 			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType';");
@@ -58,6 +58,7 @@
 
 				$venueReviewList = $venue->getReviewList();
 			}
+			ChromePhp::log("Loaded " . count($venueList) . " venues.");
 			return $venueList;
 		}
 
@@ -71,6 +72,7 @@
 
 		/**
 		 * Saves the specified review data to the database.
+		 * TODO: Add the new review to the venue's list.
 		 **/
 		public function saveReview($venueID, $title, $body, $rating) {
 			$reviewID = $this->getReviewID();
@@ -87,10 +89,12 @@
 
 			try {
 				$prep->execute();
-				// echo "<p>Saved review: $reviewID / $venueID / $title / $body / $rating</p>";
+				ChromePhp::log("Saved review: $reviewID / $venueID / $title / $body / $rating.");
+				return TRUE;
 			}
 			catch(Exception $e) {
-				echo "Coulnd't save review: $e<br>";
+				ChromePhp::log("Couldn't save review: $e.");
+				return FALSE;
 			}
 		}
 	}
