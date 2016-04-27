@@ -11,31 +11,8 @@
 		const DB_USER = "root";
 		const DB_PASSWORD = "1963nfZ95F";
 
-		private static $s_instance;
-
 		private $dbConnection;
 		
-		private function __construct() {
-		}
-
-		/**
-		 * Creates a new singleton instance of DatabaseManager.
-		 * If one exists, that is returned.
-		 **/
-		public static function create() {
-			if (!$s_instance) {
-				$s_instance = new DatabaseManager();
-			}
-			return $s_instance;
-		}
-
-		/**
-		 * Retrieves the singleton instance.
-		 **/
-		public static function get() {
-			return $s_instance;
-		}
-
 		/**
 		 * Establishes a connection to the database.
 		 **/
@@ -63,12 +40,10 @@
  			$venueList = array();
 
 			while($venueRow = ($venueResults->fetch())) {
-				echo "<p>";
 				$venueID = $venueRow["VenueID"];
 				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"],
 								   $venueRow["Address"], $venueRow["Postcode"], $venueRow["Website"], $venueRow["Telephone"]);
 				$venueList[] = $venue;
-				echo var_dump($venue)."<br>";
 			
 				// Load the reviews for this venue into an array
 				$reviewList = array();
@@ -82,10 +57,41 @@
 				$venue->setReviews($reviewList);
 
 				$venueReviewList = $venue->getReviewList();
-				echo var_dump($venueReviewList)."<br>";
-				echo "</p>";
 			}
 			return $venueList;
+		}
+
+		/**
+		 * Queries the database to retrieve the total number of reviews, so we can get the primary key.
+		 **/
+		private function getReviewID() {
+			$results = $this->dbConnection->query("SELECT COUNT(*) FROM Venues.Reviews;");
+			return $results->fetchColumn();
+		}
+
+		/**
+		 * Saves the specified review data to the database.
+		 **/
+		public function saveReview($venueID, $title, $body, $rating) {
+			$reviewID = $this->getReviewID();
+			
+			$fields = "(ReviewID, VenueID, ReviewTitle, ReviewBody, ReviewDate, StarRating)";
+			$statement = "INSERT INTO Venues.Reviews $fields VALUES ($reviewID, $venueID, :ReviewTitle, :ReviewBody, :ReviewDate, $rating);"; // ($reviewID, $venueID, , ?, ?, ?);";
+
+			// Use a prepared statement to prevent susceptibility to SQL injection
+			$prep = $this->dbConnection->prepare($statement);
+			
+			$prep->bindParam(':ReviewTitle', $title);
+			$prep->bindParam(':ReviewBody', $body);
+			$prep->bindParam(':ReviewDate', date("Y-m-d H:i:s"));
+
+			try {
+				$prep->execute();
+				// echo "<p>Saved review: $reviewID / $venueID / $title / $body / $rating</p>";
+			}
+			catch(Exception $e) {
+				echo "Coulnd't save review: $e<br>";
+			}
 		}
 	}
 ?>

@@ -27,6 +27,8 @@ INSERT INTO Venues.Days VALUES (4, "Friday");
 INSERT INTO Venues.Days VALUES (5, "Saturday");
 INSERT INTO Venues.Days VALUES (6, "Sunday");
 
+
+
 -- Stores each venue
 CREATE TABLE Venues.Venues (
 	VenueID			SMALLINT			PRIMARY KEY,
@@ -53,6 +55,7 @@ CREATE TABLE Venues.OpenTimes (
 	FOREIGN KEY (VenueID) REFERENCES Venues.Venues(VenueID) ON DELETE CASCADE,
 	PRIMARY KEY (VenueID, DayID, Opens, Closes)
 );
+
 
 -- Stores each review for each venue
 CREATE TABLE Venues.Reviews (
