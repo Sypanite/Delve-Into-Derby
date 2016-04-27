@@ -2,7 +2,8 @@
 <html lang="en">
     <head>
         <meta charset="utf-8" />
-        <title>Beguiling Derby</title>
+        <title>Delve Into Derby</title>
+		<link rel="icon" href="img/favicon.png">
         <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
     </head>
     <body>
@@ -57,36 +58,8 @@
 
 			$venueList = $_SESSION["venues_$venueType"];
 			
-			ChromePhp::log("Creating sidebar.");
-			// Create the list of venues
-			echo '<div id="venues_sidebar">';
-			echo '<ul class="w3-ul w3-hoverable">';
-			
-			ChromePhp::log("Current venue: " . $_SESSION["currentVenue"]);
-
-			// Add each venue to the list
-			for ($i = 0; $i != count($venueList); $i++) {
-				$venue = $venueList[$i];
-
-				$id = $venue->getID();
-				$name = $venue->getName();
-				$address = $venue->getAddress();
-				$postcode = $venue->getPostcode();
-				$rating = $venue->getRating();
-
-				if ($id == $_SESSION["currentVenue"]) {
-					echo '<li class="w3-blue">';
-				}
-				else {
-					echo '<li>';
-				}
-				echo '<span class="w3-large">';
-				echo '<img src="img/rating/' . $rating . '.png" class="w3-right">';
-				echo "$name (id:$id)</span><br>";
-				echo "<span>$address, Derby, $postcode / $rating</span>";
-				echo '</li>';
-			}
-			echo '</ul>';
+			createVenueList($venueList);
+			// createReviewList();
 
 			// $databaseManager->saveReview(0, "Meh", "This is a test. Food was all right.", 4);
 			session_write_close();
@@ -98,6 +71,60 @@
 				echo "<p>$message</p>";
 				ChromePhp::log("$message");
 				exit(1);
+			}
+
+			function createVenueList($venueList) {
+				ChromePhp::log("Creating venue list.");
+
+				// Create the list of venues
+				
+				echo '<nav class="w3-sidenav w3-light-grey" style="width:30%">
+					  <div class="w3-container w3-dark-grey">
+						<h4>' . getVenueTypeName() . 's</h4>
+					  </div>';
+					  
+				echo '<ul class="w3-ul w3-hoverable w3-container w3-section">';
+			
+				ChromePhp::log("Current venue: " . $_SESSION["currentVenue"]);
+				ChromePhp::log("List: '$venueList'");
+
+				// Add each venue to the list
+				for ($i = 0; $i != count($venueList); $i++) {
+					$venue = $venueList[$i];
+
+					$id = $venue->getID();
+					$name = $venue->getName();
+					$address = $venue->getAddress();
+					$postcode = $venue->getPostcode();
+					$rating = $venue->getRating();
+					
+					if ($id == $_SESSION["currentVenue"]) {
+						echo '<li class="w3-blue">';
+					}
+					else {
+						echo '<li>';
+					}
+					echo '<span class="w3-large">';
+					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
+					echo "$name (id:$id)</span><br>";
+					echo "<span>$address, Derby, $postcode / $rating</span>";
+					echo '</li>';
+				}
+				echo '</ul>
+					  </nav>';
+			}
+
+			function getVenueTypeName() {
+				switch($_SESSION["venueType"]) {
+					case "R":
+						return "Restaurant";
+
+					case "C":
+						return "Cinema";
+
+					case "M":
+						return "Museum";
+				}
 			}
 		?>
     </body>

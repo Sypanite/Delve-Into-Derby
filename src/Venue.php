@@ -31,10 +31,10 @@
 
 			$sum = 0;
 
-			for ($i = 0; $i != $this->getReviewCount(); $i++) {
+			for ($i = 0; $i != count($this->reviews); $i++) {
 				$sum += $this->reviews[$i]->getRating();
 			}
-			$averageRating = intval($sum / $this->getReviewCount());
+			$this->averageRating = intval($sum / $this->getReviewCount());
 		}
 
 		/**

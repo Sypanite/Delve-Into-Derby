@@ -52,11 +52,13 @@
 			
 				while($reviewRow = ($reviewResults->fetch())) {
 					$reviewList[] = new Review($reviewRow["ReviewTitle"], $reviewRow["ReviewBody"],
-											   $reviewRow["ReviewRating"], $reviewRow["ReviewDate"]); 
+											   $reviewRow["StarRating"], $reviewRow["ReviewDate"]);
 				}
 				$venue->setReviews($reviewList);
 
-				$venueReviewList = $venue->getReviewList();
+				if (count($reviewList) > 0) {
+					ChromePhp::log("Loaded " . count($reviewList) . " reviews for '" . $venue->getName() . "'.");
+				}
 			}
 			ChromePhp::log("Loaded " . count($venueList) . " venues.");
 			return $venueList;
