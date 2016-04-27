@@ -5,6 +5,8 @@
         <title>Delve Into Derby</title>
 		<link rel="icon" href="img/favicon.png">
         <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
+        <link rel="stylesheet" href="stylesheet.css">
+		<script src="js/index.js"></script>
     </head>
     <body>
 		<?php
@@ -21,7 +23,7 @@
 			// $_SESSION["venueType"] = "R";			// Set to restaurants
 			// $_SESSION["venueType"] = "C";			// Set to cinemas
 			$_SESSION["venueType"] = "M";				// Set to museums
-			$_SESSION["currentVenue"] = 24;				// Set to museums
+			$_SESSION["currentVenue"] = 24;				// Set the current venue ID
 			//
 			
 			ChromePhp::log("Checking database.");
@@ -57,7 +59,11 @@
 			}
 
 			$venueList = $_SESSION["venues_$venueType"];
-			
+
+			if (array_key_exists("v", $_POST)) {
+				$_SESSION["currentVenue"] = $_POST["v"];
+			}
+
 			createVenueList($venueList);
 			// createReviewList();
 
@@ -79,11 +85,12 @@
 				// Create the list of venues
 				
 				echo '<nav class="w3-sidenav w3-light-grey" style="width:30%">
+					  <div class="w3-container w3-section">
 					  <div class="w3-container w3-dark-grey">
 						<h4>' . getVenueTypeName() . 's</h4>
 					  </div>';
 					  
-				echo '<ul class="w3-ul w3-hoverable w3-container w3-section">';
+				echo '<ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
 			
 				ChromePhp::log("Current venue: " . $_SESSION["currentVenue"]);
 				ChromePhp::log("List: '$venueList'");
@@ -97,6 +104,7 @@
 					$address = $venue->getAddress();
 					$postcode = $venue->getPostcode();
 					$rating = $venue->getRating();
+				
 					
 					if ($id == $_SESSION["currentVenue"]) {
 						echo '<li class="w3-blue">';
@@ -104,14 +112,23 @@
 					else {
 						echo '<li>';
 					}
+					echo '<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white" >';
 					echo '<span class="w3-large">';
 					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
-					echo "$name (id:$id)</span><br>";
+					echo "$name</span><br>";
 					echo "<span>$address, Derby, $postcode / $rating</span>";
 					echo '</li>';
 				}
 				echo '</ul>
+					  </div>
 					  </nav>';
+
+				echo '<div style="margin-left:50%">
+						  <div class="w3-container">
+							<p>...</p>
+						  </div>
+					  </div>';
+
 			}
 
 			function getVenueTypeName() {
