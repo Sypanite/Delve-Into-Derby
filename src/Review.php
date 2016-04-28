@@ -17,6 +17,14 @@
 			$this->date = $_date;
 		}
 
+		function getTitle() {
+			return $this->title;
+		}
+
+		function getBody() {
+			return $this->body;
+		}
+
 		function getRating() {
 			return $this->rating;
 		}
