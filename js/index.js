@@ -4,6 +4,7 @@
 function swapVenue(id) {
 	// alert("Clicked " + id);
 	form = document.createElement("form");
+	form.setAttribute("name", "venueForm");
 	form.setAttribute("method", "POST");
 	form.setAttribute("action", "index.php");
 
@@ -23,6 +24,7 @@ function swapVenue(id) {
 function swapVenueType(type) {
 	// alert("Clicked " + id);
 	form = document.createElement("form");
+	form.setAttribute("name", "typeForm");
 	form.setAttribute("method", "POST");
 	form.setAttribute("action", "index.php");
 

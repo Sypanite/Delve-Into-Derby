@@ -34,15 +34,15 @@
 			ChromePhp::log("Loading venues of type '$venueType'.");
 		
 			// Load the appropriate list - no user input, hence not a prepared statement
-			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType';");
+			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType' ORDER BY AverageRating DESC;");
 			$venueResults->setFetchMode(PDO::FETCH_ASSOC); // Fetch to an associative array
  
  			$venueList = array();
 
 			while($venueRow = ($venueResults->fetch())) {
 				$venueID = $venueRow["VenueID"];
-				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"],
-								   $venueRow["Address"], $venueRow["Postcode"], $venueRow["Website"], $venueRow["Telephone"]);
+				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"], $venueRow["Address"], $venueRow["Postcode"],
+								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"]);
 				$venueList[] = $venue;
 			
 				// Load the reviews for this venue into an array
@@ -92,12 +92,20 @@
 			try {
 				$prep->execute();
 				ChromePhp::log("Saved review: $reviewID / $venueID / $title / $body / $rating.");
-				return TRUE;
+				return "OK";
 			}
 			catch(Exception $e) {
 				ChromePhp::log("Couldn't save review: $e.");
-				return FALSE;
+				return $e->getMessage();
 			}
+			updateAverage($venueID);
+		}
+
+		/**
+		 * Called after a new review is left - updates the venue's average review.
+		 **/
+		private function updateAverage($venueID) {
+			
 		}
 	}
 ?>

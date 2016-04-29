@@ -1,3 +1,13 @@
+<?php
+require "lib/chromephp/ChromePhp.php";
+
+require "src/Venue.php";
+require "src/Review.php";
+require "src/DatabaseManager.php";
+
+session_start();
+ob_start();
+?>
 <!DOCTYPE html>
 <html lang="en">
     <head>
@@ -11,84 +21,111 @@
     <body>
 		<?php
 
-			require "lib/chromephp/ChromePhp.php";
+			$databaseManager = "N/A";
+			$venueType;
+			$venueID;
+			$venueList;
 
-			require "src/Venue.php";
-			require "src/Review.php";
-			require "src/DatabaseManager.php";
+			ChromePhp::log("_POST:");
+			debug_printAssArray($_POST);
 
-			session_start();
-	
-			// Debug
-			// $_SESSION["venueType"] = "R";			// Set to restaurants
-			// $_SESSION["venueType"] = "C";			// Set to cinemas
-			$_SESSION["venueType"] = "M";				// Set to museums
-			//
-			
-			ChromePhp::log("Checking database.");
+			ChromePhp::log("Ready to load session.");
+			debug_printAssArray($_SESSION);
 
-			if (!array_key_exists("databaseManager", $_SESSION)) {
+			// Check for changes in venue type
+			if (isset($_POST["t"])) {
+				$last = "N/A";
+
+				if (isset($_SESSION["venueType"])) {
+					$last = $_SESSION["venueType"];
+				}
+
+				ChromePhp::log("POST typeID: " . $_POST["t"]);
+				$venueType = $_POST["t"];
+				unset($_POST["t"]);
+
+				if ($last == "N/A" || $type != $last) {
+					unset($_SESSION["venueList"]); // Venues need re-loading
+				}
+			}
+			else {
+				if (isset($_SESSION["venueType"])) {
+					$venueType = $_SESSION["venueType"];
+					ChromePhp::log("Using session venueType ($venueType).");
+				}
+				else {
+					ChromePhp::log("No type stored - defaulting to 'R'.");
+					$venueType = "R";
+				}
+			}
+
+			// Check for change of venue
+			if (isset($_POST["v"])) {
+				$venueID = $_POST["v"];
+				unset($_POST["v"]);
+				ChromePhp::log("POST venueID: " . $venueID);
+			}
+			else {
+				if (isset($_SESSION["venueID"])) {
+					$venueID = $_SESSION["venueID"];
+					ChromePhp::log("Using session venueID ($venueID).");
+				}
+				else {
+					ChromePhp::log("No venueID POSTed or stored - defaulting to type default.");
+					$venueID = getDefaultVenue($venueType);
+				}
+			}
+
+			if (isset($_SESSION["databaseManager"])) {
+				$databaseManager = $_SESSION["databaseManager"];
+				ChromePhp::log("Using session database instance.");
+			}
+			else {
+				ChromePhp::log("No databaseManager in session - creating new instance...");
 				$databaseManager = new DatabaseManager();
-				$_SESSION["databaseManager"] = $databaseManager;
 
-				$connectAttempt = $databaseManager->connect();
-
-				if ($connectAttempt == "TRUE") {
+				if ($databaseManager->connect() == "OK") {
 					ChromePhp::log("Successfully established a connection to the database.");
 				}
 				else {
 					ChromePhp::log("Failed to establish a connection to the database: $connectAttempt.");
 				}
+			 }
+
+			// Might need to load the venues.
+			if (isset($_SESSION["venueList"])) {
+				$venueList = $_SESSION["venueList"];
+				ChromePhp::log("Using session venue list.");
 			}
 			else {
-				$databaseManager = $_SESSION["databaseManager"];
-				ChromePhp::log("Using session database instance.");
+				ChromePhp::log("No venue list in session - re-loading.");
+				$venueList = $databaseManager->loadVenues($_SESSION["venueType"]);
 			}
+			
+			createVenueList($venueList, $venueID);
+			// createMap($venueList[$venueID]);
+			
+			ChromePhp::log("DatabaseManager: $databaseManager.");
+			// Save the session
+			$_SESSION["databaseManager"] = $databaseManager;
+			$_SESSION["venueType"] = $venueType;
+			$_SESSION["venueID"] = $venueID;
+			$_SESSION["venueList"] = $venueList;
+			ChromePhp::log("Saved session.");
+			debug_printAssArray($_SESSION);
 
-			// No venue specified
-			if (!array_key_exists("venueType", $_SESSION)) {
-				$_SESSION["venueType"] = "R"; // Default to restaurants
-			}
+			// 
 
-			// Change of venue
-			if (array_key_exists("t", $_POST)) {
-				$_SESSION["venueType"] = $_POST["t"];
-
-				// Set the default venue
-				switch($_SESSION["venueType"]) {
-					case "R":
-						$_SESSION["currentVenue"] = 0;
-					break;
-					
-					case "C":
-						$_SESSION["currentVenue"] = 20;
-					break;
-
-					case "M":
-						$_SESSION["currentVenue"] = 24;
-					break;
+			/**
+			 * Prints the contents of $_SESSION in the format Key: Value.
+			 **/
+			function debug_printAssArray($_arr) {
+				ChromePhp::log("Contains " . count($_arr) . " values. Contents:");
+			
+				foreach ($_arr as $key => $value) {
+					ChromePhp::log("$key : $value");
 				}
 			}
-
-			$venueType = $_SESSION["venueType"];
-			$databaseManager = $_SESSION["databaseManager"];
-			
-			if (!array_key_exists("venues_$venueType", $_SESSION)) {
-				ChromePhp::log("No venue list in session - creating.");
-				$_SESSION["venues_$venueType"] = $databaseManager->loadVenues($venueType);
-			}
-
-			$venueList = $_SESSION["venues_$venueType"];
-			
-			if (array_key_exists("v", $_POST)) {
-				$_SESSION["currentVenue"] = $_POST["v"];
-			}
-
-			createVenueList($venueList);
-			// createReviewList($venueList[$_SESSION["currentVenue"]]->getReviewList());
-			createMap($venueList[$_SESSION["currentVenue"]]);
-
-			session_write_close();
 
 			/**
 			 * Loads and displays the Google Maps map.
@@ -108,12 +145,14 @@
 			/**
 			 * Creates the left-side venue list.
 			 **/
-			function createVenueList($venueList) {
+			function createVenueList($venueList, $venueID) {
+				ChromePhp::log("Creating venue list.");
+
 				echo '<nav class="w3-sidenav w3-light-grey" onmouseout="closeVenueList()" style="width:30%">
 					  <div class="w3-container w3-section">
 					  <div class="w3-container">
 						<li class="w3-dropdown-hover w3-light-grey">
-						<h4><a href="#">' . getVenueTypeName() . 's</a></h4>
+						<h3><a href="#">' . getVenueTypeName() . 's</a></h3>
 						<div class="w3-dropdown-content">
 						  <a href="#" onclick="swapVenueType(\'R\')">Restaurants</a>
 						  <a href="#" onclick="swapVenueType(\'C\')">Cinemas</a>
@@ -122,19 +161,20 @@
 					  </div>';
 					  
 				echo '<ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
+				
+				ChromePhp::log("Looping through " . count($venueList) . " venues.");
 
 				// Add each venue to the list
 				for ($i = 0; $i != count($venueList); $i++) {
-					$venue = $venueList[$i];
-
-					$id = $venue->getID();
-					$name = $venue->getName();
-					$address = $venue->getAddress();
-					$postcode = $venue->getPostcode();
-					$rating = $venue->getRating();
-				
+					$id = $venueList[$i]->getID();
+					$name = $venueList[$i]->getName();
+					$address = $venueList[$i]->getAddress();
+					$postcode = $venueList[$i]->getPostcode();
+					$rating = $venueList[$i]->getAverageRating();
 					
-					if ($id == $_SESSION["currentVenue"]) {
+					// ChromePhp::log("Creating list entry for $i/" . count($venueList) . ": '" . $name . "'");
+				
+					if ($id == $venueID) {
 						echo '<li class="w3-blue">';
 					}
 					else {
@@ -142,7 +182,7 @@
 					}
 					echo '<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white" >';
 					echo '<span class="w3-large">';
-					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
+					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">'; // THIS line does the weird thing
 					echo "$name</span><br>";
 					echo "<span>$address, Derby, $postcode</span>";
 					echo '</li>';
@@ -163,6 +203,23 @@
 					case "M":
 						return "Museum";
 				}
+			}
+			
+			/**
+			 * Returns the default venue ID for this type (who needs OCP...)
+			 **/
+			function getDefaultVenue($venueType) {
+				switch($venueType) {
+					case "R":
+						return 0;
+				
+					case "C":
+						return 20;
+
+					case "M":
+						return 24;
+				}
+				return -1;
 			}
 		?>
     </body>

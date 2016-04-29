@@ -10,16 +10,21 @@
         private $name = "P. Sherman";
 		private $address = "42 Wallaby Way, Sydney";
         private $postcode = "DE0 0ED";
+        private $website = "www.website.com";
+        private $telephone = "012345 678910";
 
 		private $reviews;				// List of reviews
 		private $averageRating = 0;		// Mean rating
 		
-		function __construct($_venueID, $_typeID, $_name, $_address, $_postCode) {
+		function __construct($_venueID, $_typeID, $_name, $_address, $_postcode, $_website, $_telephone, $_rating) {
 			$this->venueID = $_venueID;
 			$this->typeID = $_typeID;
 			$this->name = $_name;
-			$this->postcode = $_postCode;
 			$this->address = $_address;
+			$this->postcode = $_postcode;
+			$this->website = $_website;
+			$this->telephone = $_telephone;
+			$this->averageRating = $_rating;
 		}
 		
 		/**
@@ -82,8 +87,22 @@
 		/**
 		 * Returns the venue's average rating.
 		 **/
-		function getRating() {
+		function getAverageRating() {
 			return $this->averageRating;
+		}
+		
+		/**
+		 * Returns the venue's telephone number.
+		 **/
+		function getTelephone() {
+			return $this->telephone;
+		}
+		
+		/**
+		 * Returns the venue's website URL.
+		 **/
+		function getWebsite() {
+			return $this->website;
 		}
     }
 ?>
