@@ -33,7 +33,15 @@
 		 **/
 		function setReviews($reviews) {
 			$this->reviews = $reviews;
+			// calculateAverageReview();
+		}
 
+		function addReview($review) {
+			$this->reviews[] = $review;
+			// calculateAverageReview();
+		}
+
+		function calculateAverageReview() {
 			$sum = 0;
 
 			for ($i = 0; $i != count($this->reviews); $i++) {

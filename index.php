@@ -5,6 +5,9 @@ require "src/Venue.php";
 require "src/Review.php";
 require "src/DatabaseManager.php";
 
+error_reporting(E_ALL);
+ini_set('display_errors', true);
+
 session_start();
 ob_start();
 ?>
@@ -26,11 +29,10 @@ ob_start();
 			$venueID;
 			$venueList;
 
-			ChromePhp::log("_POST:");
-			debug_printAssArray($_POST);
+			// $_SESSION = array(); // Clear session
 
-			ChromePhp::log("Ready to load session.");
-			debug_printAssArray($_SESSION);
+			// ChromePhp::log("_POST contents (" . count($_POST) . " values):\n" . var_export($_POST, true));
+			ChromePhp::log("Ready to load session. _SESSION contains " . count($_SESSION) . " values.");
 
 			// Check for changes in venue type
 			if (isset($_POST["t"])) {
@@ -44,7 +46,8 @@ ob_start();
 				$venueType = $_POST["t"];
 				unset($_POST["t"]);
 
-				if ($last == "N/A" || $type != $last) {
+				if ($last == "N/A" || $venueType != $last) {
+					unset($_SESSION["venueID"]); // Old venue ID is wrong
 					unset($_SESSION["venueList"]); // Venues need re-loading
 				}
 			}
@@ -76,56 +79,45 @@ ob_start();
 				}
 			}
 
+			// Check / initialise the database manager
+
 			if (isset($_SESSION["databaseManager"])) {
 				$databaseManager = $_SESSION["databaseManager"];
-				ChromePhp::log("Using session database instance.");
+				ChromePhp::log("Using session DatabaseManager.");
 			}
 			else {
-				ChromePhp::log("No databaseManager in session - creating new instance...");
 				$databaseManager = new DatabaseManager();
+				ChromePhp::log("No DatabaseManager in session - created new instance.");
+			}
+			
+			// Check the venue list
 
-				if ($databaseManager->connect() == "OK") {
-					ChromePhp::log("Successfully established a connection to the database.");
-				}
-				else {
-					ChromePhp::log("Failed to establish a connection to the database: $connectAttempt.");
-				}
-			 }
-
-			// Might need to load the venues.
 			if (isset($_SESSION["venueList"])) {
-				$venueList = $_SESSION["venueList"];
 				ChromePhp::log("Using session venue list.");
+				$venueList = $_SESSION["venueList"];
 			}
 			else {
 				ChromePhp::log("No venue list in session - re-loading.");
-				$venueList = $databaseManager->loadVenues($_SESSION["venueType"]);
+				$venueList = $databaseManager->loadVenues($venueType);
 			}
 			
-			createVenueList($venueList, $venueID);
+			createVenueList($venueList, $venueType, $venueID);
 			// createMap($venueList[$venueID]);
 			
-			ChromePhp::log("DatabaseManager: $databaseManager.");
+			// Disconnect from the database
+			$databaseManager->disconnect();
+			ChromePhp::log("Disconnected from the database.");
+
 			// Save the session
+			ChromePhp::log("Saving session...");
 			$_SESSION["databaseManager"] = $databaseManager;
 			$_SESSION["venueType"] = $venueType;
 			$_SESSION["venueID"] = $venueID;
 			$_SESSION["venueList"] = $venueList;
-			ChromePhp::log("Saved session.");
-			debug_printAssArray($_SESSION);
+			session_write_close();
+			ChromePhp::log("Session saved.");
 
-			// 
-
-			/**
-			 * Prints the contents of $_SESSION in the format Key: Value.
-			 **/
-			function debug_printAssArray($_arr) {
-				ChromePhp::log("Contains " . count($_arr) . " values. Contents:");
-			
-				foreach ($_arr as $key => $value) {
-					ChromePhp::log("$key : $value");
-				}
-			}
+			//
 
 			/**
 			 * Loads and displays the Google Maps map.
@@ -145,14 +137,14 @@ ob_start();
 			/**
 			 * Creates the left-side venue list.
 			 **/
-			function createVenueList($venueList, $venueID) {
+			function createVenueList($venueList, $venueType, $venueID) {
 				ChromePhp::log("Creating venue list.");
 
-				echo '<nav class="w3-sidenav w3-light-grey" onmouseout="closeVenueList()" style="width:30%">
+				echo '<nav class="w3-sidenav w3-light-grey" onmouseout="closeVenueList()" style="width:25%">
 					  <div class="w3-container w3-section">
 					  <div class="w3-container">
 						<li class="w3-dropdown-hover w3-light-grey">
-						<h3><a href="#">' . getVenueTypeName() . 's</a></h3>
+						<h3><a href="#">' . getVenueTypeName($venueType) . 's</a></h3>
 						<div class="w3-dropdown-content">
 						  <a href="#" onclick="swapVenueType(\'R\')">Restaurants</a>
 						  <a href="#" onclick="swapVenueType(\'C\')">Cinemas</a>
@@ -182,7 +174,7 @@ ob_start();
 					}
 					echo '<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white" >';
 					echo '<span class="w3-large">';
-					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">'; // THIS line does the weird thing
+					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
 					echo "$name</span><br>";
 					echo "<span>$address, Derby, $postcode</span>";
 					echo '</li>';
@@ -192,8 +184,8 @@ ob_start();
 					  </nav>';
 			}
 
-			function getVenueTypeName() {
-				switch($_SESSION["venueType"]) {
+			function getVenueTypeName($venueType) {
+				switch($venueType) {
 					case "R":
 						return "Restaurant";
 

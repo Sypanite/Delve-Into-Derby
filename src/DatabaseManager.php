@@ -4,7 +4,7 @@
 	 **/
 	class DatabaseManager {
 		
-		// define("GREETING", "Welcome to W3Schools.com!");
+		// define("HOST", "localhost");
 
 		const HOST = "localhost";
 		const DB_NAME = "venues";
@@ -16,10 +16,11 @@
 		/**
 		 * Establishes a connection to the database.
 		 **/
-		public function connect() {
+		function connect() {
 			try {
 				$this->dbConnection = new PDO("mysql:host=" . self::HOST . ";dbname=" . self::DB_NAME, self::DB_USER, self::DB_PASSWORD);
-				$this->dbConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); // Throw an exception if something cocks up
+				$this->dbConnection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);  // Throw an exception if something cocks up
+				$this->dbConnection->setAttribute(PDO::ATTR_PERSISTENT, TRUE);				   // Keep the connection around
 				return TRUE;
 			}
 			catch(PDOException $e) {
@@ -27,14 +28,22 @@
 			}
 		}
 
+		/**
+		 * Kills 
+		 **/
+		function disconnect() {
+			$this->dbConnection = NULL;
+		}
+
 		/*
 		 * Loads a list of venues of the specified type.
 		 */
 		function loadVenues($venueType) {
 			ChromePhp::log("Loading venues of type '$venueType'.");
-		
+			$this->connect();
+
 			// Load the appropriate list - no user input, hence not a prepared statement
-			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType' ORDER BY AverageRating DESC;");
+			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType';");
 			$venueResults->setFetchMode(PDO::FETCH_ASSOC); // Fetch to an associative array
  
  			$venueList = array();
@@ -44,7 +53,7 @@
 				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"], $venueRow["Address"], $venueRow["Postcode"],
 								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"]);
 				$venueList[] = $venue;
-			
+
 				// Load the reviews for this venue into an array
 				$reviewList = array();
 				$reviewResults = $this->dbConnection->query("SELECT * FROM Venues.Reviews WHERE VenueID = '$venueID';");
@@ -59,8 +68,12 @@
 				if (count($reviewList) > 0) {
 					ChromePhp::log("Loaded " . count($reviewList) . " reviews for '" . $venue->getName() . "'.");
 				}
+				else {
+					ChromePhp::log("Venue has no reviews.");
+				}
 			}
 			ChromePhp::log("Loaded " . count($venueList) . " venues.");
+			$this->disconnect();
 			return $venueList;
 		}
 
