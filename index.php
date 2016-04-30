@@ -132,6 +132,7 @@ ob_start();
 					$venueList[$venueID]->addReview($newRevue);
 				}
 				$_POST = array();
+				header("Location: index.php");
 			}
 
 			// Create the sidebar
