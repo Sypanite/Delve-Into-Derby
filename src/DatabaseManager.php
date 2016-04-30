@@ -52,29 +52,44 @@
 				$venueID = $venueRow["VenueID"];
 				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"], $venueRow["Address"], $venueRow["Postcode"],
 								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"]);
+
 				$venueList[] = $venue;
-
-				// Load the reviews for this venue into an array
-				$reviewList = array();
-				$reviewResults = $this->dbConnection->query("SELECT * FROM Venues.Reviews WHERE VenueID = '$venueID';");
-				$reviewResults->setFetchMode(PDO::FETCH_ASSOC);
-			
-				while($reviewRow = ($reviewResults->fetch())) {
-					$reviewList[] = new Review($reviewRow["ReviewTitle"], $reviewRow["ReviewBody"],
-											   $reviewRow["StarRating"], $reviewRow["ReviewDate"]);
-				}
-				$venue->setReviews($reviewList);
-
-				if (count($reviewList) > 0) {
-					ChromePhp::log("Loaded " . count($reviewList) . " reviews for '" . $venue->getName() . "'.");
-				}
-				else {
-					ChromePhp::log("Venue has no reviews.");
-				}
+				$venue->setReviews($this->loadReviews($venue));
 			}
 			ChromePhp::log("Loaded " . count($venueList) . " venues.");
 			$this->disconnect();
 			return $venueList;
+		}
+
+		/**
+		 * Queries and returns an array of reviews for the specified venue, ordered by rating (descending).
+		 * This is the only method in this class that expects a connection to exist, and doesn't disconnect when finished.
+		 * It should only ever be called during an active connection.
+		 **/
+		function loadReviews($venue) {
+			if ($this->dbConnection == NULL) {
+				PhpChrome::log("dbConnection cannot be null when loading reviews!");
+				return NULL;
+			}
+
+			$venueID = $venue->getID();
+
+			$reviewList = array();
+			$reviewResults = $this->dbConnection->query("SELECT * FROM Venues.Reviews WHERE VenueID = '$venueID' ORDER BY StarRating DESC;");
+			$reviewResults->setFetchMode(PDO::FETCH_ASSOC);
+	
+			while($reviewRow = ($reviewResults->fetch())) {
+				$reviewList[] = new Review($reviewRow["ReviewTitle"], $reviewRow["ReviewBody"],
+										   $reviewRow["StarRating"], $reviewRow["ReviewDate"]);
+			}
+
+			if (count($reviewList) > 0) {
+				ChromePhp::log("Loaded " . count($reviewList) . " reviews for '" . $venue->getName() . "'.");
+			}
+			else {
+				ChromePhp::log("Venue has no reviews.");
+			}
+			return $reviewList;
 		}
 
 		/**
@@ -114,7 +129,9 @@
 			}
 			else {
 				$this->dbConnection->commit();
+				$venue->setReviews($this->loadReviews($venue)); // Re-load reviews - lazy man's ordering.
 			}
+
 			$this->disconnect();
 			return ($failed ? $failed : "OK");
 		}

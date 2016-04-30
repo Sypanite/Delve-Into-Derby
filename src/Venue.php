@@ -45,6 +45,13 @@
 			ChromePhp::log("Added review - new average: " . $this->averageRating . ".");
 		}
 
+		/**
+		 * Returns the review under the specified index.
+		 **/
+		function getReview($index) {
+			return $this->reviews[$index];
+		}
+
 		function calculateAverageReview() {
 			$sum = 0;
 

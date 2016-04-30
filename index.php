@@ -38,6 +38,7 @@ ob_start();
 			$venueType;
 			$venueID;
 			$venueList;
+			$displayReview = -1;
 
 			// $_SESSION = array(); // Clear session
 
@@ -45,7 +46,7 @@ ob_start();
 			ChromePhp::log("Ready to load session. _SESSION contains " . count($_SESSION) . " values.");
 
 			/*
-			 * Check $_POST for incoming data.
+			 * Check $_POST for incoming data, and load the session.
 			 */
 
 			// Check for changes in venue type
@@ -92,6 +93,12 @@ ob_start();
 					$venueID = -1; // getDefaultVenue($venueType);
 				}
 			}
+			
+			// Check for a request to display a review
+			if (isset($_POST["displayReview"])) {
+				$displayReview = $_POST["displayReview"];
+				ChromePhp::log("Display request: $displayReview");
+			}
 
 			// Check / initialise the database manager
 			if (isset($_SESSION["databaseManager"])) {
@@ -102,15 +109,12 @@ ob_start();
 				$databaseManager = new DatabaseManager();
 				ChromePhp::log("No DatabaseManager in session - created new instance.");
 			}
-			
-			// Check the venue list
 
 			if (isset($_SESSION["venueList"])) {
-				ChromePhp::log("Using session venue list.");
 				$venueList = $_SESSION["venueList"];
+				ChromePhp::log("Using session venue list.");
 			}
 			else {
-				ChromePhp::log("No venue list in session - re-loading.");
 				$venueList = $databaseManager->loadVenues($venueType);
 			}
 
@@ -125,29 +129,17 @@ ob_start();
 				
 				$saveResult = $databaseManager->saveReview($venueList[$venueID], $newRevue);
 
-				ChromePhp::log("Save result: $saveResult");
-
 				if ($saveResult == "OK") {
 					// Saved it to the database, now add it to the session
 					$venueList[$venueID]->addReview($newRevue);
 				}
-				$_POST = array();
 				header("Location: index.php");
 			}
 
-			// Create the sidebar
+			// Create the sidenav
 			echo '<nav class="w3-sidenav w3-light-grey" style="width:25%">';
 			
-			// <button class="w3-btn w3-black w3-xlarge"><i class="fa fa-search"></i></button>
-
-			// Create the menu bar
-			echo '<div class="w3-padding w3-xxlarge w3-black">
-					<button class="w3-btn w3-black w3-xlarge"><i class="fa fa-home" onclick="swapVenue(-1)"></i></button>
-					<button class="w3-btn w3-black w3-xlarge">
-						<i class="fa fa-commenting-o" onclick="showModal_writeReview();"></i>
-					</button>
-					<button class="w3-btn w3-black w3-xlarge"><i class="fa fa-map-marker" onclick="showDirections()"></i></button>
-				  </div>';
+			createMenuBar($venueID);
 
 			if ($venueID == -1) {
 				createVenueList($venueList, $venueType);
@@ -157,7 +149,12 @@ ob_start();
 			else {
 				createReviewList($venueList[$venueID], $venueType);
 				echo '</nav>';
-				createReviewModal($venueList[$venueID], $venueType);
+				createModal_WriteReview($venueList[$venueID], $venueType);
+
+				if ($displayReview != -1) {
+					ChromePhp::log("Processing display request...");
+					createModal_DisplayReview($venueList[$venueID]->getReview($displayReview));
+				}
 				createTopBar($venueList[$venueID]);
 			}
 
@@ -173,6 +170,24 @@ ob_start();
 			ChromePhp::log("Session saved.");
 
 			//
+
+			function createMenuBar($venueID) {
+				// Create the menu bar
+				echo '<div class="w3-padding w3-xxlarge w3-black">
+						<button class="w3-btn w3-black w3-xlarge w3-hover-text-blue" onclick="swapVenue(-1)">
+							<i class="fa fa-home"></i>
+						</button>';
+
+				if ($venueID != -1) {
+					echo '<button class="w3-btn w3-black w3-xlarge w3-hover-text-blue" onclick="show(\'writeReviewModal\')">
+							<i class="fa fa-commenting-o"></i>
+						</button>
+						<button class="w3-btn w3-black w3-xlarge w3-hover-text-blue">
+							<i class="fa fa-map-marker"></i>
+						</button>';
+				}
+				echo '</div>';
+			}
 
 			/**
 			 * Loads and displays the Google Maps map.
@@ -207,11 +222,14 @@ ob_start();
 				echo '</<div>';
 			}
 
-			function createReviewModal($venue, $venueType) {
+			/**
+			 * Creates the 'write review' modal.
+			 **/
+			function createModal_WriteReview($venue, $venueType) {
 				echo '
-				<div id="reviewModal" class="w3-modal">
+				<div id="writeReviewModal" class="w3-modal">
 				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
-				  <span onclick="hideModal_writeReview()" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
+				  <span onclick="hide(\'writeReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
   
 					<div class="w3-center w3-hover-none"><br>
 					  <h2><b>' . $venue->getName() . '</b></h2>
@@ -221,10 +239,10 @@ ob_start();
 
 					  // Create the stars
 					  for ($i = 1; $i != 6; $i++) {
-						  echo '<img id="star_' . $i . '" src="img/rating/nostar.png"
+						  echo '<a href="#"><img id="star_' . $i . '" src="img/rating/nostar.png"
 								 onclick="setRating(' . $i . ')"
 								 onmouseover="displayRating(' . $i . ')"
-								 onmouseout="clearDisplayRating()">';
+								 onmouseout="clearDisplayRating()"></a>';
 					  }
 					  
 					  echo '
@@ -245,6 +263,41 @@ ob_start();
 					</div>
 				  </div>
 				</div>';
+			}
+			
+			/**
+			 * Creates the 'display review' modal.
+			 **/
+			function createModal_DisplayReview($review) {
+				ChromePhp::log("Creating display modal.");
+				echo '
+				<div id="displayReviewModal" class="w3-modal" style="display: block">
+				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-width:600px">
+				    <span onclick="hide(\'displayReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
+					 
+					  <div class="w3-center w3-padding-large">
+						<h2><b>\'' . $review->getTitle() . '\'</b></h2>
+						<div class="w3-container w3-border w3-padding-small w3-round-xlarge">
+						  <span class="w3-left">' . $review->getBody() . '</span>
+						</div>
+
+					    <div class="w3-content w3-section w3-center w3-padding-large">';
+
+							// Create the stars
+							for ($i = 1; $i != 6; $i++) {
+								 echo '<img id="star_' . $i . '" src="img/rating/' . ($i == 0 || $i > $review->getRating() ? "no" : "") . 'star.png">';
+							}
+
+						// strtotime: found at https://stackoverflow.com/questions/2588998/numerical-date-to-text-date-php
+					 	echo '
+						<div class="w3-section w3-center w3-small">
+						  <span>Written ' . date('F jS Y', strtotime($review->getDate())) . '</span>
+					    </div>
+					  </div>
+					</div>
+				  </div>
+				</div>';
+				ChromePhp::log("Creating display modal.");
 			}
 
 			/**
@@ -271,13 +324,15 @@ ob_start();
 						$rating = $reviewList[$i]->getRating();
 						$date = $reviewList[$i]->getDate();
 				
-						echo '<li>
-						<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white"></a>
-						<span class="w3-large">
-						<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
-						' . $title . '
-						</span><br>
-						' . $snippet . '
+						echo '
+						<li>
+							<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white">
+								<span class="w3-large">
+								<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
+								' . $title . '
+								</span><br>
+								' . $snippet . '
+							</a>
 						</li>';
 					}
 					echo '</ul>';
@@ -292,7 +347,7 @@ ob_start();
 
 				echo '<div class="w3-container w3-section">
 						 <li class="w3-dropdown-hover w3-light-grey">
-							<h3><a href="#" class="w3-center">' . getVenueTypeName($venueType) . 's</a></h3>
+							<h3><a href="#" class="w3-center"><b>' . getVenueTypeName($venueType) . 's</b></a></h3>
 
 							  <div class="w3-dropdown-content">
 								<a href="#" onclick="swapVenueType(\'R\')">Restaurants</a>
