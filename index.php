@@ -35,10 +35,11 @@ ob_start();
 		<?php
 
 			$databaseManager = "N/A";
-			$venueType;
-			$venueID;
-			$venueList;
+			$venueType = NULL;
+			$venueID = NULL;
+			$venueList = NULL;
 			$displayReview = -1;
+			$venueTypeList = NULL;
 
 			// $_SESSION = array(); // Clear session
 
@@ -118,6 +119,14 @@ ob_start();
 				$venueList = $databaseManager->loadVenues($venueType);
 			}
 
+			if (isset($_SESSION["venueTypeList"])) {
+				$venueTypeList = $_SESSION["venueTypeList"];
+				ChromePhp::log("Using session venue type list.");
+			}
+			else {
+				$venueTypeList = $databaseManager->loadVenueTypes();
+			}
+
 			// Check for a review submission
 			if (isset($_POST["reviewRating"])) {
 				$title = $_POST["reviewSummary"];
@@ -142,20 +151,21 @@ ob_start();
 			createMenuBar($venueID);
 
 			if ($venueID == -1) {
-				createVenueList($venueList, $venueType);
+				createVenueList($venueList, $venueTypeList, $venueType);
 				echo '</nav>';
-				createTopBar(NULL);
+				createHeader(NULL);
 			}
 			else {
-				createReviewList($venueList[$venueID], $venueType);
+				$venueTypeName = strtolower($venueTypeList[$venueType]);
+
+				createReviewList($venueList[$venueID], $venueTypeName);
 				echo '</nav>';
-				createModal_WriteReview($venueList[$venueID], $venueType);
+				createModal_WriteReview($venueList[$venueID], $venueTypeName);
 
 				if ($displayReview != -1) {
-					ChromePhp::log("Processing display request...");
 					createModal_DisplayReview($venueList[$venueID]->getReview($displayReview));
 				}
-				createTopBar($venueList[$venueID]);
+				createHeader($venueList[$venueID]);
 			}
 
 			// createMap($venueList[$venueID]);
@@ -164,13 +174,19 @@ ob_start();
 			ChromePhp::log("Saving session...");
 			$_SESSION["databaseManager"] = $databaseManager;
 			$_SESSION["venueType"] = $venueType;
+			$_SESSION["venueTypeList"] = $venueTypeList;
 			$_SESSION["venueID"] = $venueID;
 			$_SESSION["venueList"] = $venueList;
 			session_write_close();
 			ChromePhp::log("Session saved.");
 
-			//
+			/*
+			 Functions
+			 */
 
+			/**
+			 * Creates the side navigation's menu bar.
+			 **/
 			function createMenuBar($venueID) {
 				// Create the menu bar
 				echo '<div class="w3-padding w3-xxlarge w3-black">
@@ -204,7 +220,10 @@ ob_start();
 					  </iframe>';
 			}
 
-			function createTopBar($venue) { //  ' . $venue->getTelephoneNumber() . '
+			/**
+			 * Crates the application's header based on the current venue.
+			 **/
+			function createHeader($venue) {
 				echo '<div class="w3-container" style="margin-left:25% ">';
 				
 				if ($venue == NULL) {
@@ -225,7 +244,7 @@ ob_start();
 			/**
 			 * Creates the 'write review' modal.
 			 **/
-			function createModal_WriteReview($venue, $venueType) {
+			function createModal_WriteReview($venue, $venueTypeName) {
 				echo '
 				<div id="writeReviewModal" class="w3-modal">
 				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
@@ -233,7 +252,7 @@ ob_start();
   
 					<div class="w3-center w3-hover-none"><br>
 					  <h2><b>' . $venue->getName() . '</b></h2>
-					  <span>What did you think of this ' . strtolower(getVenueTypeName($venueType)) . '?</span>
+					  <span>What did you think of this ' . $venueTypeName . '?</span>
 					</div>
 					<div class="w3-content w3-section w3-center" w3-padding>';
 
@@ -252,7 +271,7 @@ ob_start();
 					  <div class="w3-section">
 
 						<input id="reviewSummary" class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Brief summary">
-						<textarea id="reviewBody" rows="4" class="w3-input w3-border" type="text" placeholder="Why did you give this ' . strtolower(getVenueTypeName($venueType)) . ' the rating you did?"></textarea>
+						<textarea id="reviewBody" rows="4" class="w3-input w3-border" type="text" placeholder="Why did you give this ' . $venueTypeName . ' the rating you did?"></textarea>
 						<br>
 						<div class="w3-center">
 						  <b><span id="errorMessage" class="w3-text-red"></span></b>
@@ -303,13 +322,15 @@ ob_start();
 			/**
 			 * Creates a list of venues in the navigation bar, based on the specified venue.
 			 **/
-			function createReviewList($venue, $venueType) {
+			function createReviewList($venue, $venueTypeName) {
 				$reviewList = $venue->getReviewList();
-				echo '<h3 class="w3-center">Reviews</h3>';
+				echo '<div class="w3-container w3-section w3-light-grey" >
+						 <h3 class="w3-center"><b>Reviews</b></h3>
+					  </div>';
 
 				if (count($reviewList) == 0) {
 					echo '<ul href="#" class="w3-ul w3-container w3-section">';
-					echo '<li><span>There are no reviews for this ' . strtolower(getVenueTypeName($venueType)) . '!
+					echo '<li><span>There are no reviews for this ' . $venueTypeName . '!
 									Why not add one?</span></li>';
 					echo '</ul>';
 					ChromePhp::log("No reviews.");
@@ -342,18 +363,19 @@ ob_start();
 			/**
 			 * Creates a list of venues in the navigation bar.
 			 **/
-			function createVenueList($venueList, $venueType) {
+			function createVenueList($venueList, $venueTypeList, $venueType) {
 				ChromePhp::log("Creating venue list.");
 
 				echo '<div class="w3-container w3-section">
 						 <li class="w3-dropdown-hover w3-light-grey">
-							<h3><a href="#" class="w3-center"><b>' . getVenueTypeName($venueType) . 's</b></a></h3>
+							<h3><a href="#" class="w3-center"><b>' . $venueTypeList[$venueType] . 's</b></a></h3>
 
-							  <div class="w3-dropdown-content">
-								<a href="#" onclick="swapVenueType(\'R\')">Restaurants</a>
-								<a href="#" onclick="swapVenueType(\'C\')">Cinemas</a>
-								<a href="#" onclick="swapVenueType(\'M\')">Museums</a>
-							  </div>
+							  <div class="w3-dropdown-content w3-border">';
+
+							  foreach ($venueTypeList as $key => $value) {
+								  echo '<a href="#" onclick="swapVenueType(\'' . $key . '\')">' . $value . 's</a>';
+							  }
+						  echo '</div>
 						 </li>
 					 </div>
 				     <ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
@@ -379,23 +401,6 @@ ob_start();
 					echo '</li>';
 				}
 				echo '</ul>';
-			}
-
-			/*
-			 * Returns the name of the specified venue - TODO load from database
-			 * This violates OCP
-			 */
-			function getVenueTypeName($venueType) {
-				switch($venueType) {
-					case "R":
-						return "Restaurant";
-
-					case "C":
-						return "Cinema";
-
-					case "M":
-						return "Museum";
-				}
 			}
 		?>
     </body>

@@ -35,9 +35,31 @@
 			$this->dbConnection = NULL;
 		}
 
-		/*
+		/**
+		 * Loads every 'type' of venue supported by the application, as keypairs.
+		 * This is done for extensibility, to stop violating Open/Closed.
+		 **/
+		function loadVenueTypes() {
+			ChromePhp::log("Loading venue types.");
+			$this->connect();
+
+			// Load the appropriate list - no user input, hence not a prepared statement
+			$typeResults = $this->dbConnection->query("SELECT * FROM Venues.VenueType;");
+			$typeResults->setFetchMode(PDO::FETCH_ASSOC);
+
+ 			$typeArray = array();
+
+			while($row = ($typeResults->fetch())) {
+				$typeArray[$row["TypeID"]] = $row["Description"];
+			}
+			ChromePhp::log("Loaded " . count($typeArray) . " venue types.");
+			$this->disconnect();
+			return $typeArray;
+		}
+
+		/**
 		 * Loads a list of venues of the specified type.
-		 */
+		 **/
 		function loadVenues($venueType) {
 			ChromePhp::log("Loading venues of type '$venueType'.");
 			$this->connect();
