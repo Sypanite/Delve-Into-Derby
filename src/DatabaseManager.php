@@ -29,9 +29,10 @@
 		}
 
 		/**
-		 * Kills 
+		 * Disconnects from the database, after rolling back any open transactions.
 		 **/
 		function disconnect() {
+			$this->dbConnection->rollBack();
 			$this->dbConnection = NULL;
 		}
 
@@ -43,7 +44,7 @@
 			$this->connect();
 
 			// Load the appropriate list - no user input, hence not a prepared statement
-			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType';");
+			$venueResults = $this->dbConnection->query("SELECT * FROM Venues.Venues WHERE TypeID = '$venueType' ORDER BY AverageRating DESC;");
 			$venueResults->setFetchMode(PDO::FETCH_ASSOC); // Fetch to an associative array
  
  			$venueList = array();
@@ -89,36 +90,57 @@
 		 * Saves the specified review data to the database.
 		 * TODO: Add the new review to the venue's list.
 		 **/
-		public function saveReview($venueID, $title, $body, $rating) {
+		function saveReview($venue, $review) {
+			$this->connect();
+			$this->dbConnection->beginTransaction();
+			$failed = FALSE;
+
+			if (storeReview($venue, $review) == "OK"
+			 && storeRating($venue, $review) == "OK") { // Might be easier just throwing an exception
+				$this->dbConnection->commit();
+			 }
+			 else {
+				$this->dbConnection->rollBack();
+				$failed = TRUE;
+			 }
+			 
+			disconnect();
+			return ($failed ? "OK" : "Failure");
+		}
+
+		private function storeReview($venue, $review) {
 			$reviewID = $this->getReviewID();
+			$venueID = $venue->getID();
 			
 			$fields = "(ReviewID, VenueID, ReviewTitle, ReviewBody, ReviewDate, StarRating)";
-			$statement = "INSERT INTO Venues.Reviews $fields VALUES ($reviewID, $venueID, :ReviewTitle, :ReviewBody, :ReviewDate, $rating);"; // ($reviewID, $venueID, , ?, ?, ?);";
+			$statement = "INSERT INTO Venues.Reviews $fields VALUES ($reviewID, $venueID, :ReviewTitle, :ReviewBody, :ReviewDate, " . $review->getRating() . ");"; // ($reviewID, $venueID, , ?, ?, ?);";
 
 			// Use a prepared statement to prevent susceptibility to SQL injection
 			$prep = $this->dbConnection->prepare($statement);
 			
-			$prep->bindParam(':ReviewTitle', $title);
-			$prep->bindParam(':ReviewBody', $body);
-			$prep->bindParam(':ReviewDate', date("Y-m-d H:i:s"));
+			$prep->bindParam(':ReviewTitle', $review->getTitle());
+			$prep->bindParam(':ReviewBody', $review->getBody());
+			$prep->bindParam(':ReviewDate', $review->getDate());
 
 			try {
 				$prep->execute();
-				ChromePhp::log("Saved review: $reviewID / $venueID / $title / $body / $rating.");
 				return "OK";
 			}
 			catch(Exception $e) {
 				ChromePhp::log("Couldn't save review: $e.");
 				return $e->getMessage();
 			}
-			updateAverage($venueID);
 		}
 
-		/**
-		 * Called after a new review is left - updates the venue's average review.
-		 **/
-		private function updateAverage($venueID) {
-			
+		private function storeRating() {
+			try {
+				$this->dbConnection->query("UPDATE Venues.Venues SET AverageRating = '" . $venue->getAverageRating() . "' WHERE VenueID = '" . $venue->getID() . "';");
+				return "OK";
+			}
+			catch(Exception $e) {
+				ChromePhp::log("Couldn't update average rating: $e.");
+				return $e->getMessage();
+			}
 		}
 	}
 ?>

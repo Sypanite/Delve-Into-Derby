@@ -33,12 +33,16 @@
 		 **/
 		function setReviews($reviews) {
 			$this->reviews = $reviews;
-			// calculateAverageReview();
 		}
 
+		/**
+		 * Adds the specified review to the list, and updates the average rating.
+		 * This is strictly for the user - database modification is done separately.
+		 **/
 		function addReview($review) {
 			$this->reviews[] = $review;
-			// calculateAverageReview();
+			$this->averageRating = $this->calculateAverageReview();
+			ChromePhp::log("Added review - new average: " . $this->averageRating . ".");
 		}
 
 		function calculateAverageReview() {
@@ -47,7 +51,7 @@
 			for ($i = 0; $i != count($this->reviews); $i++) {
 				$sum += $this->reviews[$i]->getRating();
 			}
-			$this->averageRating = intval($sum / $this->getReviewCount());
+			return intval($sum / $this->getReviewCount());
 		}
 
 		/**
@@ -102,7 +106,7 @@
 		/**
 		 * Returns the venue's telephone number.
 		 **/
-		function getTelephone() {
+		function getTelephoneNumber() {
 			return $this->telephone;
 		}
 		
