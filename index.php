@@ -23,7 +23,7 @@ ob_start();
 		<!-- w3.css - handles most styling -->
         <link rel="stylesheet" href="http://www.w3schools.com/lib/w3.css">
 
-		<!-- stylesheet.css - includes my styling, unused (remove if forever unused)  -->
+		<!-- stylesheet.css - includes my styling  -->
         <link rel="stylesheet" href="stylesheet.css">
 
 		<!-- Font Awesome - handles menu icons -->
@@ -122,9 +122,16 @@ ob_start();
 
 				ChromePhp::log("POSTed a new review - $title / $body / $rating");
 				$newRevue = new Review($title, $body, $rating, date("Y-m-d H:i:s"));
+				
+				$saveResult = $databaseManager->saveReview($venueList[$venueID], $newRevue);
 
-				$venueList[$venueID]->addReview($newRevue);
-				// $databaseManager->saveReview(venueList[$venueID], $newRevue);
+				ChromePhp::log("Save result: $saveResult");
+
+				if ($saveResult == "OK") {
+					// Saved it to the database, now add it to the session
+					$venueList[$venueID]->addReview($newRevue);
+				}
+				$_POST = array();
 			}
 
 			// Create the sidebar
@@ -143,13 +150,15 @@ ob_start();
 
 			if ($venueID == -1) {
 				createVenueList($venueList, $venueType);
+				echo '</nav>';
+				createTopBar(NULL);
 			}
 			else {
-				createReviewModal($venueList[$venueID], $venueType);
 				createReviewList($venueList[$venueID], $venueType);
+				echo '</nav>';
+				createReviewModal($venueList[$venueID], $venueType);
+				createTopBar($venueList[$venueID]);
 			}
-			echo '</nav>';
-			createTopBar($venueList[$venueID]);
 
 			// createMap($venueList[$venueID]);
 
@@ -180,17 +189,21 @@ ob_start();
 			}
 
 			function createTopBar($venue) { //  ' . $venue->getTelephoneNumber() . '
-				echo '<div class="w3-container" style="margin-left:25% ">
-					   <section class="w3-container" width:20%>
-						<i class="fa fa-phone w3-xlarge w3-left w3-top">
-							<span class="w3-container w3-section">' . $venue->getTelephoneNumber() . '</span>
-						</i>
-						<i class="fa fa-globe w3-xlarge w3-left w3-bottom">
-							<a href="http://www.' . $venue->getWebsite() . '" target="_blank" class="w3-container w3-section">www.' . $venue->getWebsite() . '</a>
-						</i>
-					   </section>';
-					  echo '</<div>';
-					 // <i class="fa fa-phone w3-xlarge w3-left"></i> .
+				echo '<div class="w3-container" style="margin-left:25% ">';
+				
+				if ($venue == NULL) {
+				}
+				else {
+					echo '<section class="w3-container" width:20%>
+							<i class="fa fa-phone w3-xlarge w3-left w3-top">
+								<span class="w3-container w3-section">' . $venue->getTelephoneNumber() . '</span>
+							</i>
+							<i class="fa fa-globe w3-xlarge w3-left w3-bottom">
+								<a href="http://www.' . $venue->getWebsite() . '" target="_blank" class="w3-container w3-section">www.' . $venue->getWebsite() . '</a>
+							</i>
+						   </section>';
+				}
+				echo '</<div>';
 			}
 
 			function createReviewModal($venue, $venueType) {
@@ -199,12 +212,13 @@ ob_start();
 				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
 				  <span onclick="hideModal_writeReview()" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
   
-					<div class="w3-center"><br>
+					<div class="w3-center w3-hover-none"><br>
 					  <h2><b>' . $venue->getName() . '</b></h2>
 					  <span>What did you think of this ' . strtolower(getVenueTypeName($venueType)) . '?</span>
-					  <div class="w3-content w3-section" w3-padding>';
+					</div>
+					<div class="w3-content w3-section w3-center" w3-padding>';
 
-					  // Build the stars
+					  // Create the stars
 					  for ($i = 1; $i != 6; $i++) {
 						  echo '<img id="star_' . $i . '" src="img/rating/nostar.png"
 								 onclick="setRating(' . $i . ')"
@@ -213,7 +227,6 @@ ob_start();
 					  }
 					  
 					  echo '
-					  </div>
 					</div>
 
 					<div class="w3-container">
@@ -232,15 +245,9 @@ ob_start();
 				  </div>
 				</div>';
 			}
-			/*
-			<textarea rows="4" cols="50">
-			At w3schools.com you will learn how to make a website. We offer free tutorials in all web development technologies. 
-			</textarea>
-			*/
 
 			/**
-			 * Creates a HTML list of reviews based on the array passed in.
-			 * The second parameter is the venue type - this is used in the event that there are no reviews.
+			 * Creates a list of venues in the navigation bar, based on the specified venue.
 			 **/
 			function createReviewList($venue, $venueType) {
 				$reviewList = $venue->getReviewList();
@@ -253,7 +260,7 @@ ob_start();
 					echo '</ul>';
 					ChromePhp::log("No reviews.");
 				}
-				else {					
+				else {
 				    echo '<ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
 
 					// Add each review to the list
@@ -263,23 +270,21 @@ ob_start();
 						$rating = $reviewList[$i]->getRating();
 						$date = $reviewList[$i]->getDate();
 				
-						echo '<li>';
-						echo '<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white" >';
-						echo '<span class="w3-large">';
-						echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
-						echo "$title</span><br>";
-						echo "<span>$snippet";
-						// echo '<span class="w3-right" style="width:25%">' . $date . '>';
-						echo '</li>';
+						echo '<li>
+						<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white"></a>
+						<span class="w3-large">
+						<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
+						' . $title . '
+						</span><br>
+						' . $snippet . '
+						</li>';
 					}
 					echo '</ul>';
-				
-					ChromePhp::log("Looping through " . count($reviewList) . " reviews.");
 				}
 			}
 
 			/**
-			 * Creates the left-side venue list.
+			 * Creates a list of venues in the navigation bar.
 			 **/
 			function createVenueList($venueList, $venueType) {
 				ChromePhp::log("Creating venue list.");
@@ -320,6 +325,10 @@ ob_start();
 				echo '</ul>';
 			}
 
+			/*
+			 * Returns the name of the specified venue - TODO load from database
+			 * This violates OCP
+			 */
 			function getVenueTypeName($venueType) {
 				switch($venueType) {
 					case "R":
@@ -331,23 +340,6 @@ ob_start();
 					case "M":
 						return "Museum";
 				}
-			}
-			
-			/**
-			 * Returns the default venue ID for this type (who needs OCP...)
-			 **/
-			function getDefaultVenue($venueType) {
-				switch($venueType) {
-					case "R":
-						return 0;
-				
-					case "C":
-						return 20;
-
-					case "M":
-						return 24;
-				}
-				return -1;
 			}
 		?>
     </body>

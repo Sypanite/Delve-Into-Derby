@@ -29,10 +29,9 @@
 		}
 
 		/**
-		 * Disconnects from the database, after rolling back any open transactions.
+		 * Disconnects from the database.
 		 **/
 		function disconnect() {
-			$this->dbConnection->rollBack();
 			$this->dbConnection = NULL;
 		}
 
@@ -88,24 +87,36 @@
 
 		/**
 		 * Saves the specified review data to the database.
-		 * TODO: Add the new review to the venue's list.
 		 **/
 		function saveReview($venue, $review) {
-			$this->connect();
-			$this->dbConnection->beginTransaction();
 			$failed = FALSE;
 
-			if (storeReview($venue, $review) == "OK"
-			 && storeRating($venue, $review) == "OK") { // Might be easier just throwing an exception
-				$this->dbConnection->commit();
-			 }
-			 else {
+			$this->connect();
+			$this->dbConnection->beginTransaction();
+
+			$storeReview = $this->storeReview($venue, $review);
+
+			if ($storeReview == "OK") {
+				$storeRating = $this->storeRating($venue);
+				
+				if ($storeRating == "OK") {
+				}
+				else {
+					$failed = $storeRating;
+				}
+			}
+			else {
+				$failed = $storeReview;
+			}
+
+			if ($failed) {
 				$this->dbConnection->rollBack();
-				$failed = TRUE;
-			 }
-			 
-			disconnect();
-			return ($failed ? "OK" : "Failure");
+			}
+			else {
+				$this->dbConnection->commit();
+			}
+			$this->disconnect();
+			return ($failed ? $failed : "OK");
 		}
 
 		private function storeReview($venue, $review) {
@@ -118,9 +129,13 @@
 			// Use a prepared statement to prevent susceptibility to SQL injection
 			$prep = $this->dbConnection->prepare($statement);
 			
-			$prep->bindParam(':ReviewTitle', $review->getTitle());
-			$prep->bindParam(':ReviewBody', $review->getBody());
-			$prep->bindParam(':ReviewDate', $review->getDate());
+			$title = $review->getTitle();
+			$body = $review->getBody();
+			$date = $review->getDate();
+
+			$prep->bindParam(':ReviewTitle', $title);
+			$prep->bindParam(':ReviewBody', $body);
+			$prep->bindParam(':ReviewDate', $date);
 
 			try {
 				$prep->execute();
@@ -132,7 +147,7 @@
 			}
 		}
 
-		private function storeRating() {
+		private function storeRating($venue) {
 			try {
 				$this->dbConnection->query("UPDATE Venues.Venues SET AverageRating = '" . $venue->getAverageRating() . "' WHERE VenueID = '" . $venue->getID() . "';");
 				return "OK";
