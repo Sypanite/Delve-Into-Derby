@@ -153,7 +153,7 @@ ob_start();
 			}
 
 			// Create the sidenav
-			echo '<nav class="w3-sidenav w3-light-grey" style="width:25%">';
+			echo '<nav class="w3-sidenav w3-light-grey w3-border-right" style="width:25%">';
 			
 			createMenuBar($venueID);
 
@@ -278,7 +278,8 @@ ob_start();
 									for ($i = 1; $i != 6; $i++) {
 										echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
 									}
-					 	  echo '</div>
+					 	  echo '
+								</div>
 							</div>
 						</div>
 					</div>
@@ -372,15 +373,20 @@ ob_start();
 			 **/
 			function createReviewList($venue, $venueTypeName) {
 				$reviewList = $venue->getReviewList();
-				echo '<div class="w3-container w3-section w3-light-grey" >
-						 <h3 class="w3-center"><b>Reviews</b></h3>
-					  </div>';
+				echo '
+					<div class="w3-container w3-section w3-light-grey" >
+						<h3 class="w3-center"><b>Reviews</b></h3>
+					</div>
+				';
 
 				if (count($reviewList) == 0) {
-					echo '<ul href="#" class="w3-ul w3-container w3-section">';
-					echo '<li><span>There are no reviews for this ' . $venueTypeName . '!
-									Why not add one?</span></li>';
-					echo '</ul>';
+					// <a href="#" style="normal-link">add one</a>?</span></li>
+
+					echo '
+						<ul href="#" class="w3-ul w3-container w3-section w3-center">
+							<li><span>There are no reviews for this ' . $venueTypeName . '! Why not add one?</span></li>
+						</ul>
+					';
 					ChromePhp::log("No reviews.");
 				}
 				else {
@@ -394,15 +400,16 @@ ob_start();
 						$date = $reviewList[$i]->getDate();
 				
 						echo '
-						<li>
-							<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white">
-								<span class="w3-large">
-								<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
-								' . $title . '
-								</span><br>
-								' . $snippet . '
-							</a>
-						</li>';
+							<li>
+								<a href="#" onclick="showReview(\'' . $i . '\')" style="fill_div" class="w3-hover-none">
+									<span class="w3-large">
+									<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
+									' . $title . '
+									</span><br>
+									' . $snippet . '
+								</a>
+							</li>
+						';
 					}
 					echo '</ul>';
 				}
@@ -412,43 +419,39 @@ ob_start();
 			 * Creates a list of venues in the navigation bar.
 			 **/
 			function createVenueList($venueList, $venueTypeList, $venueType) {
-				ChromePhp::log("Creating venue list.");
-
-				echo '<div class="w3-container w3-section border-bottom w3-border-dark-gray">
-						 <li class="w3-dropdown-hover w3-light-gray">
-							<h3><a href="#" class="w3-center"><b>' . $venueTypeList[$venueType] . 's</b></a></h3>
-
-							  <div class="w3-dropdown-content w3-border">';
-
-							  foreach ($venueTypeList as $key => $value) {
-								  echo '<a href="#" onclick="swapVenueType(\'' . $key . '\')">' . $value . 's</a>';
-							  }
-						  echo '</div>
-						 </li>
-					 </div>
-				     <ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
+				echo '
+				<div class="w3-container w3-section border-bottom w3-border-dark-gray">
+					<li class="w3-dropdown-hover">
+						<h3><a href="#" class="w3-center w3-border"><b>' . $venueTypeList[$venueType] . 's</b></a></h3>
+						<div class="w3-dropdown-content w3-border">';
+							foreach ($venueTypeList as $key => $value) {
+								echo '<a class="w3-hover-blue" href="#" onclick="swapVenueType(\'' . $key . '\')">' . $value . 's</a>';
+							}
+				echo '	</div>
+					</li>
+				</div>
+				<ul href="#" class="w3-ul w3-hoverable w3-container w3-section">';
+					// Add each venue to the list
+					for ($i = 0; $i != count($venueList); $i++) {
+						// $id = $venueList[$i]->getID();
+						$name = $venueList[$i]->getName();
+						$address = $venueList[$i]->getAddress();
+						$postcode = $venueList[$i]->getPostcode();
+						$rating = $venueList[$i]->getAverageRating();
 				
-				ChromePhp::log("Looping through " . count($venueList) . " venues.");
-
-				// Add each venue to the list
-				for ($i = 0; $i != count($venueList); $i++) {
-					$id = $venueList[$i]->getID();
-					$name = $venueList[$i]->getName();
-					$address = $venueList[$i]->getAddress();
-					$postcode = $venueList[$i]->getPostcode();
-					$rating = $venueList[$i]->getAverageRating();
-				
-					echo '<li>
-							<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white">
-							  <div class="w3-large">
-								<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
-								' . $name . '</span><br>
-								<span class="w3-medium">' . $address . ', Derby, ' . $postcode . '</span>
-							  </div>
-						    </a>
-						 </li>';
-				}
-				echo '</ul>';
+						echo '
+						<li>
+							<a href="#" onclick="swapVenue(\'' . $i . '\')" style="fill_div" class="w3-hover-none">
+								<div class="w3-large">
+									<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
+									' . $name . '<br>
+									<span class="w3-medium">' . $address . ', Derby, ' . $postcode . '</span>
+								</div>
+							</a>
+						</li>';
+					}
+			echo '
+				</ul>';
 			}
 		?>
     </body>

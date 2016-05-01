@@ -36,7 +36,6 @@ function show(id) {
 
 // POST handling functions
 
-
 /**
  * Requests the 'read review' modal.
  **/
