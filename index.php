@@ -224,21 +224,41 @@ ob_start();
 			 * Crates the application's header based on the current venue.
 			 **/
 			function createHeader($venue) {
-				echo '<div class="w3-container" style="margin-left:25% ">';
-				
 				if ($venue == NULL) {
+					echo '<div class="w3-white" style="margin-left:25%">
+							<div class="w3-container w3-margin w3-center w3-black w3-padding-small">
+								<img src="img/header.png">
+							</div>
+						  </div>';
 				}
 				else {
-					echo '<section class="w3-container" width:20%>
-							<i class="fa fa-phone w3-xlarge w3-left w3-top">
-								<span class="w3-container w3-section">' . $venue->getTelephoneNumber() . '</span>
-							</i>
-							<i class="fa fa-globe w3-xlarge w3-left w3-bottom">
-								<a href="http://www.' . $venue->getWebsite() . '" target="_blank" class="w3-container w3-section">www.' . $venue->getWebsite() . '</a>
-							</i>
-						   </section>';
+					echo '<div class="w3-white" style="margin-left:25%">
+							 <div class="w3-container w3-margin w3-center w3-black w3-padding-small">
+								<div class="w3-section w3-left">
+									  <div class="w3-row">
+											<h2><b>' . $venue->getName() . '</b></h2>
+									  </div>
+
+										<div class="w3-row w3-margin-left">
+											<i class="fa fa-map w3-large w3-text-white"></i>
+											<span>' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
+										</div>
+
+										<div class="w3-row w3-margin-left">
+											<i class="fa fa-phone w3-large w3-text-white"></i>
+											<span> ' . $venue->getTelephoneNumber() . '</span>
+										</div>
+
+										<div class="w3-row w3-margin-left">
+											<i class="fa fa-globe w3-large w3-text-white w3-padding-0">
+											</i>
+											<a href="http://www.' . $venue->getWebsite() . '"
+													  target="_blank" class="w3-container w3-section"> www.' . $venue->getWebsite() . '</a>
+										</div>
+									</div>
+							 </div>
+							</div>';
 				}
-				echo '</<div>';
 			}
 
 			/**
@@ -366,8 +386,8 @@ ob_start();
 			function createVenueList($venueList, $venueTypeList, $venueType) {
 				ChromePhp::log("Creating venue list.");
 
-				echo '<div class="w3-container w3-section">
-						 <li class="w3-dropdown-hover w3-light-grey">
+				echo '<div class="w3-container w3-section border-bottom w3-border-dark-gray">
+						 <li class="w3-dropdown-hover w3-light-gray">
 							<h3><a href="#" class="w3-center"><b>' . $venueTypeList[$venueType] . 's</b></a></h3>
 
 							  <div class="w3-dropdown-content w3-border">';
@@ -389,16 +409,16 @@ ob_start();
 					$address = $venueList[$i]->getAddress();
 					$postcode = $venueList[$i]->getPostcode();
 					$rating = $venueList[$i]->getAverageRating();
-					
-					// ChromePhp::log("Creating list entry for $i/" . count($venueList) . ": '" . $name . "'");
 				
-					echo '<li>';
-					echo '<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white" >';
-					echo '<span class="w3-large">';
-					echo '<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">';
-					echo "$name</span><br>";
-					echo "<span>$address, Derby, $postcode</span>";
-					echo '</li>';
+					echo '<li>
+							<a href="#" onclick="swapVenue(\'' . $id . '\')" style="fill_div" class="w3-hover-none w3-hover-text-white">
+							  <div class="w3-large">
+								<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
+								' . $name . '</span><br>
+								<span class="w3-medium">' . $address . ', Derby, ' . $postcode . '</span>
+							  </div>
+						    </a>
+						 </li>';
 				}
 				echo '</ul>';
 			}
