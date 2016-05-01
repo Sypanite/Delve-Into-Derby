@@ -49,6 +49,19 @@ ob_start();
 			/*
 			 * Check $_POST for incoming data, and load the session.
 			 */
+			
+			// Check for a request to display a review
+			if (isset($_POST["displayReview"])) {
+				$_SESSION["displayReview"] = $_POST["displayReview"];
+				ChromePhp::log("Display review request: " . $_SESSION["displayReview"]);
+				session_write_close();
+				header("Location: index.php");
+				exit();
+			}
+			else if (isset($_SESSION["displayReview"])) {
+				$displayReview = $_SESSION["displayReview"];
+				ChromePhp::log("Stored display request: $displayReview");
+			}
 
 			// Check for changes in venue type
 			if (isset($_POST["t"])) {
@@ -93,12 +106,6 @@ ob_start();
 					ChromePhp::log("No venueID POSTed or stored.");
 					$venueID = -1; // getDefaultVenue($venueType);
 				}
-			}
-			
-			// Check for a request to display a review
-			if (isset($_POST["displayReview"])) {
-				$displayReview = $_POST["displayReview"];
-				ChromePhp::log("Display request: $displayReview");
 			}
 
 			// Check / initialise the database manager
@@ -164,6 +171,7 @@ ob_start();
 
 				if ($displayReview != -1) {
 					createModal_DisplayReview($venueList[$venueID]->getReview($displayReview));
+					$displayReview = -1;
 				}
 				createHeader($venueList[$venueID]);
 			}
@@ -177,6 +185,7 @@ ob_start();
 			$_SESSION["venueTypeList"] = $venueTypeList;
 			$_SESSION["venueID"] = $venueID;
 			$_SESSION["venueList"] = $venueList;
+			$_SESSION["displayReview"] = $displayReview;
 			session_write_close();
 			ChromePhp::log("Session saved.");
 
@@ -232,32 +241,48 @@ ob_start();
 						  </div>';
 				}
 				else {
-					echo '<div class="w3-white" style="margin-left:25%">
-							 <div class="w3-container w3-margin w3-center w3-black w3-padding-small">
-								<div class="w3-section w3-left">
-									  <div class="w3-row">
-											<h2><b>' . $venue->getName() . '</b></h2>
-									  </div>
+					echo '
+					<div class="w3-white" style="margin-left:25%">
+						<div class="w3-container w3-margin w3-center w3-black w3-padding-medium">
+							<div class="w3-column w3-left">
+								<div class="w3-row">
+									<h2 class="w3-left"><b>' . $venue->getName() . '</b></h2>
+								</div>
 
-										<div class="w3-row w3-margin-left">
-											<i class="fa fa-map w3-large w3-text-white"></i>
-											<span>' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
-										</div>
+								<div class="w3-row">
+									<i class="fa fa-map w3-medium w3-text-white">
+										<span class="w3-padding-ver-4 w3-large w3-slim">' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
+									</i>
+								</div>
+								
+								<div class="w3-row">
+									<i class="fa fa-phone w3-large w3-text-white w3-left">
+										<span class="w3-padding-ver-4 w3-slim"> ' . $venue->getTelephoneNumber() . '</span>
+									</i>
+								</div>
+								
+								<div class="w3-row">
+									<i class="fa fa-globe w3-large w3-text-white w3-left">
+										<a class="w3-padding-ver-4 w3-slim w3-container w3-section"
+												  href="http://www.' . $venue->getWebsite() . '" target="_blank"> www.' . $venue->getWebsite() . '
+										</a>
+									</i>
+								</div>
+							</div>
+							
+							<div class="w3-column w3-padding-0 w3-right">
+								<div class="w3-content w3-section w3-center w3-padding-large';
+									echo '<img id="debug" src="img/rating/nostar.png">'; // Bit of a hack - the first star is eaten for some reason?
 
-										<div class="w3-row w3-margin-left">
-											<i class="fa fa-phone w3-large w3-text-white"></i>
-											<span> ' . $venue->getTelephoneNumber() . '</span>
-										</div>
-
-										<div class="w3-row w3-margin-left">
-											<i class="fa fa-globe w3-large w3-text-white w3-padding-0">
-											</i>
-											<a href="http://www.' . $venue->getWebsite() . '"
-													  target="_blank" class="w3-container w3-section"> www.' . $venue->getWebsite() . '</a>
-										</div>
-									</div>
-							 </div>
-							</div>';
+									// Create the stars
+									for ($i = 1; $i != 6; $i++) {
+										echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
+									}
+					 	  echo '</div>
+							</div>
+						</div>
+					</div>
+					';
 				}
 			}
 
@@ -285,6 +310,7 @@ ob_start();
 					  }
 					  
 					  echo '
+					  <span class="w3-text-white">' . $venue->getReviewCount() . ' reviews</span>
 					</div>
 
 					<div class="w3-container">
@@ -311,32 +337,34 @@ ob_start();
 				ChromePhp::log("Creating display modal.");
 				echo '
 				<div id="displayReviewModal" class="w3-modal" style="display: block">
-				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-width:600px">
-				    <span onclick="hide(\'displayReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
-					 
-					  <div class="w3-center w3-padding-large">
-						<h2><b>\'' . $review->getTitle() . '\'</b></h2>
-						<div class="w3-container w3-border w3-padding-small w3-round-xlarge">
-						  <span class="w3-left">' . $review->getBody() . '</span>
+					<div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-width:600px">
+						<span onclick="hide(\'displayReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
+						 
+						<div class="w3-center w3-padding-large">
+							<h2>
+								<b>' . $review->getTitle() . '</b>
+							</h2>
+							
+							<div class="w3-container">';
+								// Create the stars
+								for ($i = 1; $i != 6; $i++) {
+									echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $review->getRating() ? "no" : "") . 'star.png">';
+								}
+							// strtotime: found at https://stackoverflow.com/questions/2588998/numerical-date-to-text-date-php
+							echo '
+							</div>
+
+							<div class="w3-container w3-border w3-margin-top w3-padding-small w3-round-xlarge">
+								<span class="w3-left">' . $review->getBody() . '</span>
+							</div>
+
+							<div class="w3-section w3-center w3-small">
+								<span>Written ' . date('F jS Y', strtotime($review->getDate())) . '</span>
+							</div>
 						</div>
-
-					    <div class="w3-content w3-section w3-center w3-padding-large">';
-
-							// Create the stars
-							for ($i = 1; $i != 6; $i++) {
-								 echo '<img id="star_' . $i . '" src="img/rating/' . ($i == 0 || $i > $review->getRating() ? "no" : "") . 'star.png">';
-							}
-
-						// strtotime: found at https://stackoverflow.com/questions/2588998/numerical-date-to-text-date-php
-					 	echo '
-						<div class="w3-section w3-center w3-small">
-						  <span>Written ' . date('F jS Y', strtotime($review->getDate())) . '</span>
-					    </div>
-					  </div>
 					</div>
-				  </div>
 				</div>';
-				ChromePhp::log("Creating display modal.");
+				ChromePhp::log("Created display modal.");
 			}
 
 			/**

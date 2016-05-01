@@ -52,6 +52,9 @@
 			return $this->reviews[$index];
 		}
 
+		/**
+		 * Calculates the mean review rating.
+		 **/
 		function calculateAverageReview() {
 			$sum = 0;
 
