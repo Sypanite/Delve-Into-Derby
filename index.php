@@ -28,8 +28,9 @@ ob_start();
 
 		<!-- Font Awesome - handles menu icons -->
         <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.4.0/css/font-awesome.min.css">
-
+		
 		<script src="js/index.js"></script>
+		<script src="js/map.js"></script>
     </head>
     <body>
 		<?php
@@ -161,6 +162,7 @@ ob_start();
 				createVenueList($venueList, $venueTypeList, $venueType);
 				echo '</nav>';
 				createHeader(NULL);
+				createMap(NULL);
 			}
 			else {
 				$venueTypeName = strtolower($venueTypeList[$venueType]);
@@ -174,9 +176,9 @@ ob_start();
 					$displayReview = -1;
 				}
 				createHeader($venueList[$venueID]);
+				createMap($venueList[$venueID]);
 			}
 
-			// createMap($venueList[$venueID]);
 
 			// Save the session
 			ChromePhp::log("Saving session...");
@@ -218,15 +220,33 @@ ob_start();
 			 * Loads and displays the Google Maps map.
 			 **/
 			function createMap($venue) {
-				PhpConsole::log("Querying maps for '" . $venue->getName() . "'.");
-				$query = str_replace(' ', '+', $venue->getName() . " Derby"); // Should do it
-				PhpConsole::log("Querying maps: $query");
+				$query = "Derby";
 
-				echo '<iframe width="600" height="450"
-					  frameborder="0" style="border:0"
-					  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0
-						   &q=' . $query . '">
-					  </iframe>';
+				if ($venue != NULL) {
+					$query = str_replace(' ', '+', $venue->getName()) . ", Derby";
+				}
+				$query = preg_replace('/^-+|-+$/', '', strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $query)));
+
+				ChromePhp::log("Querying maps: '$query'");
+
+				echo '
+				<div class="w3-white" style="margin-left:25%">
+					<div class="w3-container w3-margin w3-center w3-black w3-padding-medium">
+						<iframe
+						  width="1350"
+						  height="790"
+						  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0
+							&q=' . $query . '">
+						</iframe>
+					</div>
+				</div>
+				';
+				
+				/*echo '
+				<div class="w3-white" style="margin-left:25%" onload="mapVenue(\'' . $query . '\')">
+					<script src="https://maps.googleapis.com/maps/api/js?callback=initMap" async defer></script>
+				</div>
+				';*/
 			}
 
 			/**
@@ -270,15 +290,19 @@ ob_start();
 								</div>
 							</div>
 							
-							<div class="w3-column w3-padding-0 w3-right">
-								<div class="w3-content w3-section w3-center w3-padding-large';
-									echo '<img id="debug" src="img/rating/nostar.png">'; // Bit of a hack - the first star is eaten for some reason?
+							<div class="w3-column w3-section w3-right">
+								<div class="w3-row w3-center
+									<img id="debug" src="img/rating/nostar.png">
+					';  // ^ Bit of a hack - the first star is eaten for some reason
 
 									// Create the stars
 									for ($i = 1; $i != 6; $i++) {
 										echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
 									}
-					 	  echo '
+					echo '
+								</div>
+								<div class="w3-row w3-center">
+									<span class="w3-color-white w3-small"><b>' . ($venue->getReviewCount() == 0 ? "No" : $venue->getReviewCount()) . ' reviews</b></span>
 								</div>
 							</div>
 						</div>
