@@ -11,7 +11,7 @@ a.fill-div {
 /*
  Provides styling info for the map.
  Based on example code by 'SAGAR MANE' found at https://stackoverflow.com/questions/30190346/how-to-make-google-map-responsive-inside-any-div-element
- */
+ 
 #map {
 	position: relative;
 	overflow: hidden;
@@ -20,3 +20,4 @@ a.fill-div {
 	height: 800px;
 	width: 97.65%;
 }
+*/

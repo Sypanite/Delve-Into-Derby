@@ -272,11 +272,21 @@ ob_start();
 
 				echo '
 					<div class="w3-white" style="margin-left:25%">
-						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium">
+						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium"
+						     style="position: relative; overflow: hidden; padding: 0; float: inherit; height: ' . getMapHeight($venue). 'px; width: 97.65%;">
 							<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0&callback=initMap" async defer></script>
 						</div>
 					</div>
 				';
+			}
+
+			/**
+			 * Returns the height, in pixels, of the Google map based on whether or not a venue is
+			 * displayed. This is a total hack and completely goes against my intention of keeping
+			 * things responsive, but I cannot get height to respond.
+			 **/
+			function getMapHeight($venue) {
+				return ($venue == NULL ? 800 : 770);				
 			}
 
 			/**
