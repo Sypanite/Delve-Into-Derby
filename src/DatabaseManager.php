@@ -73,7 +73,8 @@
 			while($venueRow = ($venueResults->fetch())) {
 				$venueID = $venueRow["VenueID"];
 				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"], $venueRow["Address"], $venueRow["Postcode"],
-								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"]);
+								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"],
+								   $venueRow["Latitude"], $venueRow["Longitude"], $venueRow["Note"], $venueRow["Description"]);
 
 				$venueList[] = $venue;
 				$venue->setReviews($this->loadReviews($venue));
@@ -118,15 +119,20 @@
 		 * Queries the database to retrieve the total number of reviews, so we can get the primary key.
 		 **/
 		private function getReviewID() {
-			$results = $this->dbConnection->query("SELECT COUNT(*) FROM Venues.Reviews;");
-			return $results->fetchColumn();
+			// $results = $this->dbConnection->query("SELECT COUNT(*) FROM Venues.Reviews;");
+			// return $results->fetchColumn();
+
+			$results = $this->dbConnection->query("SELECT ReviewID FROM Venues.Reviews ORDER BY ReviewID DESC;");
+			$results->setFetchMode(PDO::FETCH_ASSOC);
+			
+			return $results->fetch()["ReviewID"] + 1; // Add one to the highest reviewID
 		}
 
 		/**
 		 * Saves the specified review data to the database.
 		 **/
 		function saveReview($venue, $review) {
-			$failed = FALSE;
+			$failed;
 
 			$this->connect();
 			$this->dbConnection->beginTransaction();
@@ -134,11 +140,10 @@
 			$storeReview = $this->storeReview($venue, $review);
 
 			if ($storeReview == "OK") {
+				$venue->updateAverageRating();
 				$storeRating = $this->storeRating($venue);
 				
-				if ($storeRating == "OK") {
-				}
-				else {
+				if ($storeRating != "OK") {
 					$failed = $storeRating;
 				}
 			}
@@ -148,10 +153,13 @@
 
 			if ($failed) {
 				$this->dbConnection->rollBack();
+				ChromePhp::log("Rolled back.");
 			}
 			else {
 				$this->dbConnection->commit();
+				ChromePhp::log("Committed changes.");
 				$venue->setReviews($this->loadReviews($venue)); // Re-load reviews - lazy man's ordering.
+				ChromePhp::log("Reloaded reviews.");
 			}
 
 			$this->disconnect();
@@ -161,6 +169,7 @@
 		private function storeReview($venue, $review) {
 			$reviewID = $this->getReviewID();
 			$venueID = $venue->getID();
+			ChromePhp::log("Review ID: $reviewID.");
 			
 			$fields = "(ReviewID, VenueID, ReviewTitle, ReviewBody, ReviewDate, StarRating)";
 			$statement = "INSERT INTO Venues.Reviews $fields VALUES ($reviewID, $venueID, :ReviewTitle, :ReviewBody, :ReviewDate, " . $review->getRating() . ");"; // ($reviewID, $venueID, , ?, ?, ?);";
@@ -181,7 +190,7 @@
 				return "OK";
 			}
 			catch(Exception $e) {
-				ChromePhp::log("Couldn't save review: $e.");
+				ChromePhp::log("Couldn't save review: $e .");
 				return $e->getMessage();
 			}
 		}

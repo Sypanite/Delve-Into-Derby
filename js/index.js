@@ -1,21 +1,24 @@
+
 var rating = 0;
 
+/**
+ * Sets the current rating to the specified value.
+ **/
 function setRating(_rating) {
 	rating = _rating;
 	updateStars(rating);
 }
 
-function updateStars(display) {
-	for (i = 1; i != 6; i++) {
-		img = document.getElementById('star_' + i);
-		img.setAttribute("src", "img/rating/" + (i == 0 || i > display ? "no" : "") + "star.png");
-	}
-}
-
+/**
+ * Configures the stars to represent the specified rating.
+ **/
 function displayRating(toDisplay) {
 	updateStars(toDisplay);
 }
 
+/**
+ * Configures the stars to represent the current selected rating.
+ **/
 function clearDisplayRating() {
 	updateStars(rating);
 }
@@ -35,7 +38,6 @@ function show(id) {
 }
 
 // POST handling functions
-
 
 /**
  * Requests the 'read review' modal.
@@ -67,19 +69,40 @@ function submitReview() {
 	var reviewSummary = document.getElementById("reviewSummary").value;
 	var reviewBody = document.getElementById("reviewBody").value;
 
+	var check = checkReviewSubmission(reviewSummary, reviewBody);
+
+	if (check != "OK") {
+	 	document.getElementById("errorMessage").innerHTML = check;
+	}
+	else {
+		postValues([["reviewRating", rating], ["reviewSummary", reviewSummary], ["reviewBody", reviewBody]]);
+	}
+}
+
+/*
+ * Error checks the user's review submission. Returns "OK" if all is in order, otherwise returns the appropriate error message.
+ */
+function checkReviewSubmission(reviewSummary, reviewBody) {
 	if (rating == 0) {
-	 	document.getElementById("errorMessage").innerHTML = "Please provide a rating.";
-	 	return;
+	 	return "Please provide a rating.";
 	}
+
 	if (reviewSummary == "") {
-	 	document.getElementById("errorMessage").innerHTML = "Please provide a title.";
-	 	return;
+		return "Please provide a title.";
 	}
+	else if (reviewSummary.length >= 30) {
+		var tooLong = (reviewSummary.length - 31);
+		return "Your title is " + tooLong + " character" + (tooLong == 1 ? "" : "s") + " too long!";
+	}
+
 	if (reviewBody == "") {
-	 	document.getElementById("errorMessage").innerHTML = "Please provide a brief review.";
-	 	return;
+	 	return "Please provide a brief review.";
 	}
-	postValues([["reviewRating", rating], ["reviewSummary", reviewSummary], ["reviewBody", reviewBody]]);
+	else if (reviewBody.length >= 251) {
+		var tooLong = (reviewBody.length - 251);
+		return "Your review is " + tooLong + " character" + (tooLong == 1 ? "" : "s") + " too long!";
+	}
+	return "OK";
 }
 
 /**

@@ -12,11 +12,17 @@
         private $postcode = "DE0 0ED";
         private $website = "www.website.com";
         private $telephone = "012345 678910";
+		
+		private $latitude;
+		private $longitude;
+		private $listNote;
+		private $headerInfo;
 
 		private $reviews;				// List of reviews
 		private $averageRating = 0;		// Mean rating
 		
-		function __construct($_venueID, $_typeID, $_name, $_address, $_postcode, $_website, $_telephone, $_rating) {
+		function __construct($_venueID, $_typeID, $_name, $_address, $_postcode, $_website, $_telephone, $_rating,
+							 $_latitude, $_longitude, $_listNote, $_headerInfo) {
 			$this->venueID = $_venueID;
 			$this->typeID = $_typeID;
 			$this->name = $_name;
@@ -25,8 +31,12 @@
 			$this->website = $_website;
 			$this->telephone = $_telephone;
 			$this->averageRating = $_rating;
+			$this->latitude = $_latitude;
+			$this->longitude = $_longitude;
+			$this->listNote = $_listNote;
+			$this->headerInfo = $_headerInfo;
 		}
-		
+
 		/**
 		 * Set the reviews, loaded from the database.
 		 * Also updates "averageRating" with the current mean of the ratings.
@@ -36,13 +46,10 @@
 		}
 
 		/**
-		 * Adds the specified review to the list, and updates the average rating.
-		 * This is strictly for the user - database modification is done separately.
+		 * Updates the average rating based on the review list.
 		 **/
-		function addReview($review) {
-			$this->reviews[] = $review;
+		function updateAverageRating() {
 			$this->averageRating = $this->calculateAverageReview();
-			ChromePhp::log("Added review - new average: " . $this->averageRating . ".");
 		}
 
 		/**
@@ -52,6 +59,9 @@
 			return $this->reviews[$index];
 		}
 
+		/**
+		 * Calculates the mean review rating.
+		 **/
 		function calculateAverageReview() {
 			$sum = 0;
 
@@ -122,6 +132,34 @@
 		 **/
 		function getWebsite() {
 			return $this->website;
+		}
+
+		/**
+		 * Returns this venue's latitude. Used to display it on the map.
+		 **/		
+		function getLatitude() {
+			return $this->latitude;
+		}
+
+		/**
+		 * Returns this venue's longitude. Used to display it on the map.
+		 **/		
+		function getLongitude() {
+			return $this->longitude;
+		}
+
+		/**
+		 * Returns this venue's 'list note'. Displayed in the venue list.
+		 **/		
+		function getListNote() {
+			return $this->listNote;
+		}
+
+		/**
+		 * Returns a description of this venue. Displayed in the header.
+		 **/		
+		function getDescription() {
+			return $this->headerInfo;
 		}
     }
 ?>
