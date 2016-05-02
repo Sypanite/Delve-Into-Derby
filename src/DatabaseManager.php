@@ -73,7 +73,8 @@
 			while($venueRow = ($venueResults->fetch())) {
 				$venueID = $venueRow["VenueID"];
 				$venue = new Venue($venueID, $venueRow["TypeID"], $venueRow["Name"], $venueRow["Address"], $venueRow["Postcode"],
-								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"]);
+								   $venueRow["Website"], $venueRow["Telephone"], $venueRow["AverageRating"],
+								   $venueRow["Latitude"], $venueRow["Longitude"], $venueRow["Note"], $venueRow["Description"]);
 
 				$venueList[] = $venue;
 				$venue->setReviews($this->loadReviews($venue));

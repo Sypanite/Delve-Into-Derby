@@ -1,22 +1,64 @@
 /**
- * Handles the Google Maps map
+ * Handles the Google Maps map.
+ * Often based on example code by Google.
  **/
 
 /*
- * Displays the specified venue on the map.
+ * $_POST the user's location to the server so it can be stored in $_SESSION.
  */
-function mapVenue(venue) {
+function getUserLatLong(position) {
+	alert("Posting lat/long");
+	postValues([["latitude", position.coords.latitude], ["longitude", position.coords.longitude]]);
 }
 
 /*
- * Initialises the Maps map.
+ * Initialises the map.
  */
 function initMap() {
-	var map = new google.maps.Map(document.getElementById("map"), {
-		center: { lat: -34.397, lng: 150.644 },
-		scrollwheel: false,
-		zoom: 8
+	var latLong;
+	var mapLatLong;
+	var userLatLong;
+	var label;
+
+	latLong = document.getElementById("latLong").getAttribute("name");
+	latLong = latLong.split(",");
+	mapLatLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
+
+	label = document.getElementById("venueName").getAttribute("name");
+
+	if (navigator.geolocation) {
+		if (!document.getElementById("userLatLong")) {
+			navigator.geolocation.getCurrentPosition(getUserLatLong);
+		}
+		else {
+			latLong = document.getElementById("userLatLong").getAttribute("name");
+			latLong = latLong.split(",");
+			userLatLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
+		}
+	}
+	
+	var map = new google.maps.Map(document.getElementById("map"),
+	{
+		center: mapLatLong,
+		zoom: 14
 	});
+
+	var placeMarker = new google.maps.Marker(
+	{
+		position: mapLatLong,
+		map: map,
+		title: label
+	});
+
+	if (userLatLong) {
+		var userMarker = new google.maps.Marker(
+		{
+			position: userLatLong,
+			map: map,
+			title: "You",
+			label: "Y"// "img/maps/restaurants.png"
+		});
+	}
 }
 
 /*

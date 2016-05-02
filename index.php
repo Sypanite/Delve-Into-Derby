@@ -41,6 +41,8 @@ ob_start();
 			$venueList = NULL;
 			$displayReview = -1;
 			$venueTypeList = NULL;
+			$latitude = 0;
+			$longitude = 0;
 
 			// $_SESSION = array(); // Clear session
 
@@ -64,6 +66,18 @@ ob_start();
 				ChromePhp::log("Stored display request: $displayReview");
 			}
 
+			// Check for latitude/longitude
+			if (isset($_POST["latitude"])) {
+				$latitude = $_POST["latitude"];
+				$longitude = $_POST["longitude"];
+				ChromePhp::log("Reveived latitude/longitude: $latitude, $longitude");
+			}
+			else if (isset($_SESSION["latitude"])) {
+				$latitude = $_SESSION["latitude"];
+				$longitude = $_SESSION["longitude"];
+				ChromePhp::log("Stored latitude/longitude request: $latitude, $longitude");
+			}
+			
 			// Check for changes in venue type
 			if (isset($_POST["t"])) {
 				$last = "N/A";
@@ -162,7 +176,7 @@ ob_start();
 				createVenueList($venueList, $venueTypeList, $venueType);
 				echo '</nav>';
 				createHeader(NULL);
-				createMap(NULL);
+				createMap(NULL, $latitude, $longitude);
 			}
 			else {
 				$venueTypeName = strtolower($venueTypeList[$venueType]);
@@ -176,9 +190,8 @@ ob_start();
 					$displayReview = -1;
 				}
 				createHeader($venueList[$venueID]);
-				createMap($venueList[$venueID]);
+				createMap($venueList[$venueID], $latitude, $longitude);
 			}
-
 
 			// Save the session
 			ChromePhp::log("Saving session...");
@@ -188,6 +201,11 @@ ob_start();
 			$_SESSION["venueID"] = $venueID;
 			$_SESSION["venueList"] = $venueList;
 			$_SESSION["displayReview"] = $displayReview;
+
+			if ($latitude != 0) {
+				$_SESSION["latitude"] = $latitude;
+				$_SESSION["longitude"] = $longitude;
+			}
 			session_write_close();
 			ChromePhp::log("Session saved.");
 
@@ -219,34 +237,40 @@ ob_start();
 			/**
 			 * Loads and displays the Google Maps map.
 			 **/
-			function createMap($venue) {
-				$query = "Derby";
+			function createMap($venue, $userLatitude, $userLongitude) {
+				$latitude;
+				$longitude;
+				$label;
 
 				if ($venue != NULL) {
-					$query = str_replace(' ', '+', $venue->getName()) . ", Derby";
+					// Venue's lat/long
+					$latitude = $venue->getLatitude();
+					$longitude = $venue->getLongitude();
+					$label = $venue->getName();
 				}
-				$query = preg_replace('/^-+|-+$/', '', strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $query)));
-
-				ChromePhp::log("Querying maps: '$query'");
+				else {
+					// Derby's lat/long
+					$latitude = 52.92253;
+					$longitude = -1.474619;
+					$label = "Derby";
+				}
 
 				echo '
-				<div class="w3-white" style="margin-left:25%">
-					<div class="w3-container w3-margin w3-center w3-black w3-padding-medium">
-						<iframe
-						  width="1350"
-						  height="790"
-						  src="https://www.google.com/maps/embed/v1/place?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0
-							&q=' . $query . '">
-						</iframe>
-					</div>
-				</div>
+					<div id="latLong" name="' . $latitude . ',' . $longitude . '" style="display:none;"></div>
+					<div id="venueName" name="' . $label . '" style="display:none;"></div>
 				';
-				
-				/*echo '
-				<div class="w3-white" style="margin-left:25%" onload="mapVenue(\'' . $query . '\')">
-					<script src="https://maps.googleapis.com/maps/api/js?callback=initMap" async defer></script>
-				</div>
-				';*/
+
+					if ($userLatitude != 0) {
+						echo '<div id="userLatLong" name="' . $userLatitude . ',' . $userLongitude . '" style="display:none;"></div>';
+					}
+
+				echo '
+					<div class="w3-white" style="margin-left:25%">
+						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium">
+							<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0&callback=initMap" async defer></script>
+						</div>
+					</div>
+				';
 			}
 
 			/**
@@ -262,52 +286,58 @@ ob_start();
 				}
 				else {
 					echo '
-					<div class="w3-white" style="margin-left:25%">
-						<div class="w3-container w3-margin w3-center w3-black w3-padding-medium">
-							<div class="w3-column w3-left">
-								<div class="w3-row">
-									<h2 class="w3-left"><b>' . $venue->getName() . '</b></h2>
-								</div>
+						<div class="w3-white" style="margin-left:25%">
+							<div class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium">
+								<div class="w3-column w3-left">
+									<div class="w3-row">
+										<h2 class="w3-left"><b>' . $venue->getName() . '</b></h2>
+									</div>
 
-								<div class="w3-row">
-									<i class="fa fa-map w3-medium w3-text-white">
-										<span class="w3-padding-ver-4 w3-large w3-slim">' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
-									</i>
-								</div>
+									<div class="w3-row">
+										<i class="fa fa-map w3-medium w3-text-white">
+											<span class="w3-padding-ver-4 w3-large w3-slim">' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
+										</i>
+									</div>
 								
-								<div class="w3-row">
-									<i class="fa fa-phone w3-large w3-text-white w3-left">
-										<span class="w3-padding-ver-4 w3-slim"> ' . $venue->getTelephoneNumber() . '</span>
-									</i>
-								</div>
+									<div class="w3-row">
+										<i class="fa fa-phone w3-large w3-text-white w3-left">
+											<span class="w3-padding-ver-4 w3-slim"> ' . $venue->getTelephoneNumber() . '</span>
+										</i>
+									</div>
 								
-								<div class="w3-row">
-									<i class="fa fa-globe w3-large w3-text-white w3-left">
-										<a class="w3-padding-ver-4 w3-slim w3-container w3-section"
-												  href="http://www.' . $venue->getWebsite() . '" target="_blank"> www.' . $venue->getWebsite() . '
-										</a>
-									</i>
+									<div class="w3-row">
+										<i class="fa fa-globe w3-large w3-text-white w3-left">
+											<a class="w3-padding-ver-4 w3-slim w3-container w3-section"
+													  href="http://www.' . $venue->getWebsite() . '" target="_blank"> www.' . $venue->getWebsite() . '
+											</a>
+										</i>
+									</div>
 								</div>
-							</div>
 							
-							<div class="w3-column w3-section w3-right">
-								<div class="w3-row w3-center
-									<img id="debug" src="img/rating/nostar.png">
-					';  // ^ Bit of a hack - the first star is eaten for some reason
-
-									// Create the stars
-									for ($i = 1; $i != 6; $i++) {
-										echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
-									}
-					echo '
+								<div class="w3-column w3-section w3-right">
+									<div class="w3-row w3-right">
+										<div class="w3-row w3-center">
+						';
+										// Create the stars
+										for ($i = 1; $i != 6; $i++) {
+											echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
+										}
+						echo '
+										</div>
+										<div class="w3-row w3-center">
+											<span class="w3-color-white w3-small"><b>' . ($venue->getReviewCount() == 0 ? "No" : $venue->getReviewCount()) . ' reviews</b></span>						
+										</div>
+									</div>
 								</div>
-								<div class="w3-row w3-center">
-									<span class="w3-color-white w3-small"><b>' . ($venue->getReviewCount() == 0 ? "No" : $venue->getReviewCount()) . ' reviews</b></span>
+
+								<div class="w3-display-bottomright">
+									<div class="w3-padding w3-right" style="width:75%">
+										<p class="w3-color-white w3-medium w3-right-align">' . $venue->getDescription() . '</p>						
+									</div>
 								</div>
 							</div>
 						</div>
-					</div>
-					';
+						';
 				}
 			}
 
@@ -316,43 +346,44 @@ ob_start();
 			 **/
 			function createModal_WriteReview($venue, $venueTypeName) {
 				echo '
-				<div id="writeReviewModal" class="w3-modal">
-				  <div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
-				  <span onclick="hide(\'writeReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
+					<div id="writeReviewModal" class="w3-modal">
+						<div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
+							<span onclick="hide(\'writeReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
   
-					<div class="w3-center w3-hover-none"><br>
-					  <h2><b>' . $venue->getName() . '</b></h2>
-					  <span>What did you think of this ' . $venueTypeName . '?</span>
-					</div>
-					<div class="w3-content w3-section w3-center" w3-padding>';
-
-					  // Create the stars
-					  for ($i = 1; $i != 6; $i++) {
-						  echo '<a href="#"><img id="star_' . $i . '" src="img/rating/nostar.png"
-								 onclick="setRating(' . $i . ')"
-								 onmouseover="displayRating(' . $i . ')"
-								 onmouseout="clearDisplayRating()"></a>';
-					  }
-					  
-					  echo '
-					  <span class="w3-text-white">' . $venue->getReviewCount() . ' reviews</span>
-					</div>
-
-					<div class="w3-container">
-					  <div class="w3-section">
-
-						<input id="reviewSummary" class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Brief summary">
-						<textarea id="reviewBody" rows="4" class="w3-input w3-border" type="text" placeholder="Why did you give this ' . $venueTypeName . ' the rating you did?"></textarea>
-						<br>
-						<div class="w3-center">
-						  <b><span id="errorMessage" class="w3-text-red"></span></b>
+							<div class="w3-center w3-hover-none"><br>
+								<h2><b>' . $venue->getName() . '</b></h2>
+								<span>What did you think of this ' . $venueTypeName . '?</span>
+							</div>
+						
+							<div class="w3-content w3-section w3-center" w3-padding>
+				';
+								// Create the stars
+								for ($i = 1; $i != 6; $i++) {
+				echo '
+									<a href="#"><img id="star_' . $i . '" src="img/rating/nostar.png"
+									 onclick="setRating(' . $i . ')"
+									 onmouseover="displayRating(' . $i . ')"
+									 onmouseout="clearDisplayRating()"></a>
+				';
+								}
+				echo '
+							</div>
+						
+							<div class="w3-container">
+								<div class="w3-section">
+									<input id="reviewSummary" class="w3-input w3-border w3-margin-bottom" type="text" placeholder="Brief summary">
+									<textarea id="reviewBody" rows="4" class="w3-input w3-border" type="text" placeholder="Why did you give this ' . $venueTypeName . ' the rating you did?"></textarea>
+									<br>
+									<div class="w3-center">
+									  <b><span id="errorMessage" class="w3-text-red"></span></b>
+									</div>
+									<br>
+									<button class="w3-btn w3-btn-block" onclick="submitReview()">Submit</button>
+								</div>
+							</div>
 						</div>
-						<br>
-						<button class="w3-btn w3-btn-block" onclick="submitReview()">Submit</button>
-					  </div>
 					</div>
-				  </div>
-				</div>';
+				';
 			}
 			
 			/**
@@ -468,8 +499,10 @@ ob_start();
 							<a href="#" onclick="swapVenue(\'' . $i . '\')" style="fill_div" class="w3-hover-none">
 								<div class="w3-large">
 									<img src="img/rating/' . $rating . '.png" class="w3-right" style="width:25%">
-									' . $name . '<br>
-									<span class="w3-medium">' . $address . ', Derby, ' . $postcode . '</span>
+									' . $name . '<br>';
+								//	<span class="w3-medium">' . $address . ', Derby, ' . $postcode . '</span>
+						echo '
+									<span class="w3-medium">' . $venueList[$i]->getListNote() . '</span>
 								</div>
 							</a>
 						</li>';
