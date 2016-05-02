@@ -127,7 +127,7 @@
 		 * Saves the specified review data to the database.
 		 **/
 		function saveReview($venue, $review) {
-			$failed;
+			$failed = FALSE;
 
 			$this->connect();
 			$this->dbConnection->beginTransaction();
@@ -137,7 +137,9 @@
 			if ($storeReview == "OK") {
 				$storeRating = $this->storeRating($venue);
 				
-				if ($storeRating != "OK") {
+				if ($storeRating == "OK") {
+				}
+				else {
 					$failed = $storeRating;
 				}
 			}

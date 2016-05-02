@@ -132,8 +132,7 @@ ob_start();
 				$databaseManager = new DatabaseManager();
 				ChromePhp::log("No DatabaseManager in session - created new instance.");
 			}
-			
-			// Check for the venue list
+
 			if (isset($_SESSION["venueList"])) {
 				$venueList = $_SESSION["venueList"];
 				ChromePhp::log("Using session venue list.");
@@ -142,7 +141,6 @@ ob_start();
 				$venueList = $databaseManager->loadVenues($venueType);
 			}
 
-			// Check for the venue type list
 			if (isset($_SESSION["venueTypeList"])) {
 				$venueTypeList = $_SESSION["venueTypeList"];
 				ChromePhp::log("Using session venue type list.");
@@ -160,16 +158,13 @@ ob_start();
 				ChromePhp::log("POSTed a new review - $title / $body / $rating");
 				$newRevue = new Review($title, $body, $rating, date("Y-m-d H:i:s"));
 				
-				$_SESSION["reviewLeft"] = $databaseManager->saveReview($venueList[$venueID], $newRevue);
+				$saveResult = $databaseManager->saveReview($venueList[$venueID], $newRevue);
 
+				if ($saveResult == "OK") {
+					// Saved it to the database, now add it to the session
+					$venueList[$venueID]->addReview($newRevue);
+				}
 				header("Location: index.php");
-				exit();
-			}
-			
-			if (isset($_SESSION["reviewLeft"])) {
-				ChromePhp::log("Review was left.");
-				createModal_ReviewConfirmed($venueList[$venueID], strtolower($venueTypeList[$venueType]), $_SESSION["reviewLeft"]);
-				unset($_SESSION["reviewLeft"]);
 			}
 
 			// Create the sidenav
@@ -390,55 +385,12 @@ ob_start();
 					</div>
 				';
 			}
-
-			/**
-			 * Creates the 'review confirmed' modal.
-			 **/
-
-			/**
-			 * Creates the 'review confirmed' modal.
-			 **/
-			function createModal_ReviewConfirmed($venue, $venueTypeName, $result) {
-				echo '
-				<div id="confirmReviewModal" class="w3-modal" style="display: block">
-					<div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-width:600px">
-						<span onclick="hide(\'confirmReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
-						 
-						<div class="w3-center w3-padding-large">
-							';
-
-							if ($result == TRUE) {
-				echo '
-								<h2>
-									<b>Thank you!</b>
-								</h2>
-								<div class="w3-section w3-margin-top w3-padding-small w3-round-xlarge">
-									<span>Thank you for taking the time to tell us what you thought. Your feedback will help other patrons in their ' . $venueTypeName . '-related endeavours.</span>
-								</div>
-				';
-							}
-							else {
-				echo '
-								<h2>
-									<b>Oh-oh...</b>
-								</h2>
-								<div class="w3-section w3-margin-top w3-padding-small w3-round-xlarge">
-									<span>Well, this is embarrassing - something went wrong whilst saving your review. Please try again later.</span>
-								</div>
-				';
-								ChromePhp::log("ERROR SAVING REVIEW: '$result'.");
-							}
-				echo '
-						</div>
-					</div>
-				</div>
-				';
-			}
 			
 			/**
 			 * Creates the 'display review' modal.
 			 **/
 			function createModal_DisplayReview($review) {
+				ChromePhp::log("Creating display modal.");
 				echo '
 				<div id="displayReviewModal" class="w3-modal" style="display: block">
 					<div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-width:600px">
@@ -468,6 +420,7 @@ ob_start();
 						</div>
 					</div>
 				</div>';
+				ChromePhp::log("Created display modal.");
 			}
 
 			/**
