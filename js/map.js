@@ -15,19 +15,6 @@ function getUserLatLong(position) {
 	postValues([["latitude", position.coords.latitude], ["longitude", position.coords.longitude]]);
 }
 
-/**
- * Resizes the map so that it fits comfortably within the div.
- **/
-function resize() {
-	alert("Resizing");
-	var mapElement = document.getElementById("map");
-	var navElement = document.getElementById("sidenav");
-	
-	var width = mapElement.offsetWidth;
-	var height = navElement.offsetHeight;
-	alert(width + ", " + height);
-}
-
 /*
  * Initialises the map.
  */

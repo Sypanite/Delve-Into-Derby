@@ -172,7 +172,7 @@ ob_start();
 			}
 
 			// Create the sidenav
-			echo '<nav id="sidenav" class="w3-sidenav w3-light-grey w3-border-right" style="width:25%">';
+			echo '<nav class="w3-sidenav w3-light-grey w3-border-right" style="width:25%">';
 			
 			createMenuBar($venueID);
 
@@ -228,7 +228,7 @@ ob_start();
 						</button>';
 
 				if ($venueID != -1) {
-					echo '<button class="w3-btn w3-black w3-xlarge w3-hover-text-blue" onclick="show(\'writeReviewModal\') w3-tooltip">
+					echo '<button class="w3-btn w3-black w3-xlarge w3-hover-text-blue" onclick="show(\'writeReviewModal\')">
 							<i class="fa fa-commenting-o"></i>
 						</button>';
 					/*
@@ -272,8 +272,7 @@ ob_start();
 
 				echo '
 					<div class="w3-white" style="margin-left:25%">
-						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium"
-									  style="position: relative; overflow: hidden; padding: 0; float: inherit; height: ' . getMapHeight($venue). 'px; width: 97.65%;">
+						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium">
 							<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0&callback=initMap" async defer></script>
 						</div>
 					</div>
@@ -281,25 +280,15 @@ ob_start();
 			}
 
 			/**
-			 * Returns the height, in pixels, of the Google map based on whether or not a venue is
-			 * displayed. This is a total hack and completely goes against my intention of keeping
-			 * things responsive, but I cannot get height to respond.
-			 **/
-			function getMapHeight($venue) {
-				return ($venue == NULL ? 800 : 770);				
-			}
-
-			/**
 			 * Crates the application's header based on the current venue.
 			 **/
 			function createHeader($venue) {
 				if ($venue == NULL) {
-					echo '
-						<div class="w3-white" style="margin-left:25%">
-							<div class="w3-row w3-margin w3-center w3-black w3-padding-small">
-								<img class="w3-row" src="img/header.png">
+					echo '<div class="w3-white" style="margin-left:25%">
+							<div class="w3-container w3-margin w3-center w3-black w3-padding-small">
+								<img src="img/header.png">
 							</div>
-						</div>';
+						  </div>';
 				}
 				else {
 					echo '
@@ -334,13 +323,13 @@ ob_start();
 								<div class="w3-column w3-section w3-right">
 									<div class="w3-row w3-right">
 										<div id="ratingContainer" class="w3-row w3-center">
-					';
+						';
 											// Create the stars
 											for ($i = 1; $i != 6; $i++) {
 												echo '<img id="star_' . $i . '" src="img/rating/' . ($i > $venue->getAverageRating() ? "no" : "") . 'star.png">';
 											}
 											// <canvas id="starCanvas" width="180" height="30" onload="fillStars(\'' . $venue->getAverageRating() . '\')"></canvas>
-					echo '
+						echo '
 										</div>
 										<div class="w3-row w3-center">
 											<span class="w3-color-white w3-small"><b>' . ($venue->getReviewCount() == 0 ? "No" : $venue->getReviewCount()) . ' reviews</b></span>						
@@ -355,7 +344,7 @@ ob_start();
 								</div>
 							</div>
 						</div>
-					';
+						';
 				}
 			}
 
