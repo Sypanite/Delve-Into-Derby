@@ -2,6 +2,16 @@
 var rating = 0;
 
 /**
+ * Updates the review stars to reflect the current review being displayed.
+ **/
+function updateStars(display) {
+	for (i = 1; i != 6; i++) {
+		img = document.getElementById('star_' + i);
+		img.setAttribute("src", "img/rating/" + (i == 0 || i > display ? "no" : "") + "star.png");
+	}
+}
+
+/**
  * Sets the current rating to the specified value.
  **/
 function setRating(_rating) {

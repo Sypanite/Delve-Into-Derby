@@ -11,7 +11,6 @@ var userLatLong;
  * $_POST the user's location to the server so it can be stored in $_SESSION.
  */
 function getUserLatLong(position) {
-	alert("Posting lat/long");
 	postValues([["latitude", position.coords.latitude], ["longitude", position.coords.longitude]]);
 }
 
@@ -78,37 +77,13 @@ function initMap() {
 	}
 }
 
+/**
+ * Adds a click listener for the specified marker. The fact that you had to do this tripped me up.
+ **/
 function addListener(marker) {
 	marker.addListener('click',
 		function () {
 			postValue("v", marker.index - 1);
 		}
 	);
-}
-
-/**
- * Displays the route to the specified venue on the map from the user's current position.
- * Based on example code by Google.
- * Doesn't seem to work. Forget it - priorities.
- **/
-function mapDirections() {
-	var directionsDisplay = new google.maps.DirectionsRenderer({
-		map: map
-	});
-
-	var request = {
-		destination: venueLatLong,
-		origin: userLatLong,
-		travelMode: google.maps.TravelMode.DRIVING
-	};
-
-	// Pass the directions request to the directions service.
-	var directionsService = new google.maps.DirectionsService();
-
-	directionsService.route(request, function(response, status) {
-		if (status == google.maps.DirectionsStatus.OK) {
-			// Display the route on the map.
-			directionsDisplay.setDirections(response);
-		}
-	});
 }

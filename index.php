@@ -157,7 +157,6 @@ ob_start();
 				$body = $_POST["reviewBody"];
 				$rating = $_POST["reviewRating"];
 
-				ChromePhp::log("POSTed a new review - $title / $body / $rating");
 				$newRevue = new Review($title, $body, $rating, date("Y-m-d H:i:s"));
 				
 				$_SESSION["reviewLeft"] = $databaseManager->saveReview($venueList[$venueID], $newRevue);
