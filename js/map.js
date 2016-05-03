@@ -4,7 +4,7 @@
  **/
 
 var map;
-var venueLatLong;
+var centreLatLong;
 var userLatLong;
 
 /*
@@ -22,11 +22,15 @@ function initMap() {
 	var latLong;
 	var label;
 
-	latLong = document.getElementById("latLong").getAttribute("name");
+	latLong = document.getElementById("centreLatLong").getAttribute("name");
 	latLong = latLong.split(",");
-	venueLatLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
-
-	label = document.getElementById("venueName").getAttribute("name");
+	centreLatLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
+	
+	var map = new google.maps.Map(document.getElementById("map"),
+	{
+		center: centreLatLong,
+		zoom: 14
+	});
 
 	if (navigator.geolocation) {
 		if (!document.getElementById("userLatLong")) {
@@ -38,19 +42,30 @@ function initMap() {
 			userLatLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
 		}
 	}
-	
-	var map = new google.maps.Map(document.getElementById("map"),
-	{
-		center: venueLatLong,
-		zoom: 14
-	});
 
-	var placeMarker = new google.maps.Marker(
-	{
-		position: venueLatLong,
-		map: map,
-		title: label
-	});
+	var venue = document.getElementById("venue_0");
+	var i = 0;
+	
+	while (venue) {
+		latLong = venue.getAttribute("name");
+		var tokens = latLong.split("[@]");
+
+		var name = tokens[0];
+		latLong = tokens[1].split("[,]");
+
+		latLong = {lat: parseFloat(latLong[0]), lng: parseFloat(latLong[1])};
+
+		var placeMarker = new google.maps.Marker(
+		{
+			position: latLong,
+			map: map,
+			title: name,
+			index: i
+		});
+		
+		addListener(placeMarker);
+		venue = document.getElementById("venue_" + (i++));
+	}
 
 	if (userLatLong) {
 		var userMarker = new google.maps.Marker(
@@ -63,10 +78,19 @@ function initMap() {
 	}
 }
 
-/*
+function addListener(marker) {
+	marker.addListener('click',
+		function () {
+			postValue("v", marker.index - 1);
+		}
+	);
+}
+
+/**
  * Displays the route to the specified venue on the map from the user's current position.
  * Based on example code by Google.
- */
+ * Doesn't seem to work. Forget it - priorities.
+ **/
 function mapDirections() {
 	var directionsDisplay = new google.maps.DirectionsRenderer({
 		map: map
@@ -75,7 +99,7 @@ function mapDirections() {
 	var request = {
 		destination: venueLatLong,
 		origin: userLatLong,
-		travelMode: google.maps.TravelMode.WALKING
+		travelMode: google.maps.TravelMode.DRIVING
 	};
 
 	// Pass the directions request to the directions service.

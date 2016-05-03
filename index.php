@@ -180,7 +180,7 @@ ob_start();
 				createVenueList($venueList, $venueTypeList, $venueType);
 				echo '</nav>';
 				createHeader(NULL);
-				createMap(NULL, $latitude, $longitude);
+				createMap(NULL, $venueList, $latitude, $longitude);
 			}
 			else {
 				$venueTypeName = strtolower($venueTypeList[$venueType]);
@@ -194,7 +194,7 @@ ob_start();
 					$displayReview = -1;
 				}
 				createHeader($venueList[$venueID]);
-				createMap($venueList[$venueID], $latitude, $longitude);
+				createMap($venueList[$venueID], $venueList, $latitude, $longitude);
 			}
 
 			// Save the session
@@ -243,32 +243,40 @@ ob_start();
 			/**
 			 * Loads and displays the Google Maps map.
 			 **/
-			function createMap($venue, $userLatitude, $userLongitude) {
+			function createMap($venue, $venueList, $userLatitude, $userLongitude) {
 				$latitude;
 				$longitude;
-				$label;
 
 				if ($venue != NULL) {
-					// Venue's lat/long
+					// Center on the venue's lat/long
 					$latitude = $venue->getLatitude();
 					$longitude = $venue->getLongitude();
-					$label = $venue->getName();
+
+					// Display a marker only for this venue
+					echo '
+						<div id="venue_0" name="' . $venue->getName() . '[@]' . $venue->getLatitude() . '[,]' . $venue->getLongitude() . '" style="display:none;"></div>
+					';
 				}
 				else {
-					// Derby's lat/long
+					// Centre on Derby's lat/long
 					$latitude = 52.92253;
 					$longitude = -1.474619;
-					$label = "Derby";
+
+					// Display markers for every other venue
+					for ($i = 0; $i != count($venueList); $i++) {
+						echo '
+							<div id="venue_' . $i . '" name="' . $venueList[$i]->getName() . '[@]' . $venueList[$i]->getLatitude() . '[,]' . $venueList[$i]->getLongitude() . '" style="display:none;"></div>
+						';
+					}
 				}
 
 				echo '
-					<div id="latLong" name="' . $latitude . ',' . $longitude . '" style="display:none;"></div>
-					<div id="venueName" name="' . $label . '" style="display:none;"></div>
+					<div id="centreLatLong" name="' . $latitude . ',' . $longitude . '" style="display:none;"></div>
 				';
 
-					if ($userLatitude != 0) {
-						echo '<div id="userLatLong" name="' . $userLatitude . ',' . $userLongitude . '" style="display:none;"></div>';
-					}
+				if ($userLatitude != 0) {
+					echo '<div id="userLatLong" name="' . $userLatitude . ',' . $userLongitude . '" style="display:none;"></div>';
+				}
 
 				echo '
 					<div class="w3-white" style="margin-left:25%">
