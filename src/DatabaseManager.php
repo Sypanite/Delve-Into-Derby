@@ -140,6 +140,7 @@
 			$storeReview = $this->storeReview($venue, $review);
 
 			if ($storeReview == "OK") {
+				$venue->addReview($review);
 				$venue->updateAverageRating();
 				$storeRating = $this->storeRating($venue);
 				

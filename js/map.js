@@ -71,8 +71,8 @@ function initMap() {
 		{
 			position: userLatLong,
 			map: map,
-			title: "You",
-			label: "Y"// "img/maps/restaurants.png"
+			title: "You (approximately)",
+			label: "U"// "img/maps/restaurants.png"
 		});
 	}
 }

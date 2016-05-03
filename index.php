@@ -261,7 +261,7 @@ ob_start();
 					$latitude = 52.92253;
 					$longitude = -1.474619;
 
-					// Display markers for every other venue
+					// Display markers for every venue
 					for ($i = 0; $i != count($venueList); $i++) {
 						echo '
 							<div id="venue_' . $i . '" name="' . $venueList[$i]->getName() . '[@]' . $venueList[$i]->getLatitude() . '[,]' . $venueList[$i]->getLongitude() . '" style="display:none;"></div>
@@ -279,7 +279,7 @@ ob_start();
 
 				echo '
 					<div class="w3-white" style="margin-left:25%">
-						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-padding-medium"
+						<div id="map" class="w3-container w3-margin w3-center w3-display-container w3-black w3-border w3-padding-medium"
 						     style="position: relative; overflow: hidden; padding: 0; float: inherit; height: ' . getMapHeight($venue). 'px; width: 97.65%;">
 							<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCe4BB7jH_lBh7vMj0xJrvh8vivkhJNwj0&callback=initMap" async defer></script>
 						</div>
@@ -316,18 +316,18 @@ ob_start();
 										<h2 class="w3-left"><b>' . $venue->getName() . '</b></h2>
 									</div>
 
-									<div class="w3-row">
+									<div class="w3-row w3-left">
 										<i class="fa fa-map w3-medium w3-text-white">
 											<span class="w3-padding-ver-4 w3-large w3-slim">' . $venue->getAddress() . ', Derby, ' . $venue->getPostcode() . '</span>
 										</i>
 									</div>
-								
+									<br>
 									<div class="w3-row">
 										<i class="fa fa-phone w3-large w3-text-white w3-left">
 											<span class="w3-padding-ver-4 w3-slim"> ' . $venue->getTelephoneNumber() . '</span>
 										</i>
 									</div>
-								
+									
 									<div class="w3-row">
 										<i class="fa fa-globe w3-large w3-text-white w3-left">
 											<a class="w3-padding-ver-4 w3-slim w3-container w3-section"
@@ -374,21 +374,18 @@ ob_start();
 						<div class="w3-modal-content w3-card-8 w3-animate-zoom" style="max-height:800px max-width:600px">
 							<span onclick="hide(\'writeReviewModal\')" class="w3-closebtn w3-container w3-padding-hor-16 w3-display-topright">&times;</span>
   
-							<div class="w3-center w3-hover-none"><br>
+							<div class="w3-center"><br>
 								<h2><b>' . $venue->getName() . '</b></h2>
 								<span>What did you think of this ' . $venueTypeName . '?</span>
 							</div>
 						
-							<div class="w3-content w3-section w3-center" w3-padding>
+							<div class="w3-section w3-center" onmouseout="clearDisplayRating()">
 				';
 								// Create the stars
 								for ($i = 1; $i != 6; $i++) {
-				echo '
-									<a href="#"><img id="star_' . $i . '" src="img/rating/nostar.png"
-									 onclick="setRating(' . $i . ')"
-									 onmouseover="displayRating(' . $i . ')"
-									 onmouseout="clearDisplayRating()"></a>
-				';
+									echo '<a href="#"><img id="star_' . $i . '" src="img/rating/nostar.png"
+											 onclick="setRating(' . $i . ')"
+											 onmouseover="displayRating(' . $i . ')"></a>';
 								}
 				echo '
 							</div>
@@ -432,7 +429,7 @@ ob_start();
 									<b>Thank you!</b>
 								</h2>
 								<div class="w3-section w3-margin-top w3-padding-small w3-round-xlarge">
-									<span>Thank you for taking the time to tell us what you thought. Your feedback will help other patrons in their ' . $venueTypeName . '-related endeavours.</span>
+									<span>Thank you for taking the time to tell us what you thought. Your feedback will aid other patrons in their ' . $venueTypeName . '-related endeavours.</span>
 								</div>
 				';
 							}

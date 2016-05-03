@@ -53,6 +53,14 @@
 		}
 
 		/**
+		 * Adds the specified review to the list of reviews.
+		 * This is only ever a temporary measure, used to re-calculate the average.
+		 **/
+		function addReview($review) {
+			$this->reviews[] = $review;
+		}
+
+		/**
 		 * Returns the review under the specified index.
 		 **/
 		function getReview($index) {
